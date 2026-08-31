@@ -28,6 +28,8 @@ Documentation API:
 GET /api/docs
 ```
 
+La page `/api/docs` contient aussi un bouton `Copier la doc en .md`. Il permet de copier toute la documentation au format Markdown pour la partager dans un README, une issue, Notion, Discord ou tout autre outil de documentation.
+
 Inscription:
 
 ```http

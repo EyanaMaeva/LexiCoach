@@ -9,215 +9,214 @@ class ApiDocumentationController extends Controller
 {
     public function __invoke(): View
     {
-        return view('docs.api', [
-            'documentation' => [
-                'title' => 'Documentation API',
-                'version' => '1.0',
-                'base_url' => url('/api'),
-                'authentication_type' => 'Bearer Token avec Laravel Sanctum',
-                'important_headers' => [
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer {access_token}',
-                ],
-                'modules' => [
-                    [
-                        'name' => 'Authentification',
-                        'slug' => 'authentification',
-                        'description' => 'Module pour inscription, connexion, recuperation du profil connecte et deconnexion.',
-                        'endpoints' => [
-                            [
-                                'name' => 'Inscription',
-                                'method' => 'POST',
-                                'path' => '/api/auth/register',
-                                'protected' => false,
-                                'description' => 'Cree un compte utilisateur et retourne directement un token Sanctum.',
-                                'headers' => [
-                                    'Accept' => 'application/json',
-                                    'Content-Type' => 'application/json',
-                                ],
-                                'request_body' => [
-                                    'full_name' => 'Marie Dupont',
-                                    'email' => 'marie@example.com',
-                                    'password' => 'password123',
-                                    'password_confirmation' => 'password123',
-                                    'device_name' => 'flutter-app',
-                                ],
-                                'responses' => [
-                                    [
-                                        'status' => 201,
-                                        'title' => 'Succes',
-                                        'body' => [
-                                            'success' => true,
-                                            'message' => 'Inscription reussie.',
-                                            'data' => [
-                                                'user' => [
-                                                    'id' => 1,
-                                                    'full_name' => 'Marie Dupont',
-                                                    'email' => 'marie@example.com',
-                                                    'email_verified_at' => null,
-                                                    'created_at' => '2026-08-31T10:00:00.000000Z',
-                                                ],
-                                                'token' => [
-                                                    'type' => 'Bearer',
-                                                    'access_token' => '1|exempleDeTokenSanctum',
-                                                    'expires_at' => null,
-                                                ],
+        $documentation = [
+            'title' => 'Documentation API',
+            'version' => '1.0',
+            'base_url' => url('/api'),
+            'authentication_type' => 'Bearer Token avec Laravel Sanctum',
+            'important_headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer {access_token}',
+            ],
+            'modules' => [
+                [
+                    'name' => 'Authentification',
+                    'slug' => 'authentification',
+                    'description' => 'Module pour inscription, connexion, recuperation du profil connecte et deconnexion.',
+                    'endpoints' => [
+                        [
+                            'name' => 'Inscription',
+                            'method' => 'POST',
+                            'path' => '/api/auth/register',
+                            'protected' => false,
+                            'description' => 'Cree un compte utilisateur et retourne directement un token Sanctum.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                            ],
+                            'request_body' => [
+                                'full_name' => 'Marie Dupont',
+                                'email' => 'marie@example.com',
+                                'password' => 'password123',
+                                'password_confirmation' => 'password123',
+                                'device_name' => 'flutter-app',
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 201,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Inscription reussie.',
+                                        'data' => [
+                                            'user' => [
+                                                'id' => 1,
+                                                'full_name' => 'Marie Dupont',
+                                                'email' => 'marie@example.com',
+                                                'email_verified_at' => null,
+                                                'created_at' => '2026-08-31T10:00:00.000000Z',
+                                            ],
+                                            'token' => [
+                                                'type' => 'Bearer',
+                                                'access_token' => '1|exempleDeTokenSanctum',
+                                                'expires_at' => null,
                                             ],
                                         ],
                                     ],
-                                    [
-                                        'status' => 422,
-                                        'title' => 'Erreur de validation',
-                                        'body' => [
-                                            'message' => 'The email has already been taken. (and 1 more error)',
-                                            'errors' => [
-                                                'email' => ['The email has already been taken.'],
-                                                'password' => ['The password field confirmation does not match.'],
-                                            ],
+                                ],
+                                [
+                                    'status' => 422,
+                                    'title' => 'Erreur de validation',
+                                    'body' => [
+                                        'message' => 'The email has already been taken. (and 1 more error)',
+                                        'errors' => [
+                                            'email' => ['The email has already been taken.'],
+                                            'password' => ['The password field confirmation does not match.'],
                                         ],
                                     ],
                                 ],
                             ],
-                            [
-                                'name' => 'Connexion',
-                                'method' => 'POST',
-                                'path' => '/api/auth/login',
-                                'protected' => false,
-                                'description' => 'Connecte un utilisateur avec email et password puis retourne un token Sanctum.',
-                                'headers' => [
-                                    'Accept' => 'application/json',
-                                    'Content-Type' => 'application/json',
-                                ],
-                                'request_body' => [
-                                    'email' => 'marie@example.com',
-                                    'password' => 'password123',
-                                    'device_name' => 'flutter-app',
-                                ],
-                                'responses' => [
-                                    [
-                                        'status' => 200,
-                                        'title' => 'Succes',
-                                        'body' => [
-                                            'success' => true,
-                                            'message' => 'Connexion reussie.',
-                                            'data' => [
-                                                'user' => [
-                                                    'id' => 1,
-                                                    'full_name' => 'Marie Dupont',
-                                                    'email' => 'marie@example.com',
-                                                    'email_verified_at' => null,
-                                                    'created_at' => '2026-08-31T10:00:00.000000Z',
-                                                ],
-                                                'token' => [
-                                                    'type' => 'Bearer',
-                                                    'access_token' => '1|exempleDeTokenSanctum',
-                                                    'expires_at' => null,
-                                                ],
+                        ],
+                        [
+                            'name' => 'Connexion',
+                            'method' => 'POST',
+                            'path' => '/api/auth/login',
+                            'protected' => false,
+                            'description' => 'Connecte un utilisateur avec email et password puis retourne un token Sanctum.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                            ],
+                            'request_body' => [
+                                'email' => 'marie@example.com',
+                                'password' => 'password123',
+                                'device_name' => 'flutter-app',
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Connexion reussie.',
+                                        'data' => [
+                                            'user' => [
+                                                'id' => 1,
+                                                'full_name' => 'Marie Dupont',
+                                                'email' => 'marie@example.com',
+                                                'email_verified_at' => null,
+                                                'created_at' => '2026-08-31T10:00:00.000000Z',
+                                            ],
+                                            'token' => [
+                                                'type' => 'Bearer',
+                                                'access_token' => '1|exempleDeTokenSanctum',
+                                                'expires_at' => null,
                                             ],
                                         ],
                                     ],
-                                    [
-                                        'status' => 401,
-                                        'title' => 'Identifiants incorrects',
-                                        'body' => [
-                                            'message' => 'Les identifiants sont incorrects.',
-                                            'errors' => [
-                                                'email' => ['Les identifiants sont incorrects.'],
-                                            ],
+                                ],
+                                [
+                                    'status' => 401,
+                                    'title' => 'Identifiants incorrects',
+                                    'body' => [
+                                        'message' => 'Les identifiants sont incorrects.',
+                                        'errors' => [
+                                            'email' => ['Les identifiants sont incorrects.'],
                                         ],
                                     ],
                                 ],
                             ],
-                            [
-                                'name' => 'Utilisateur connecte',
-                                'method' => 'GET',
-                                'path' => '/api/auth/me',
-                                'protected' => true,
-                                'description' => 'Retourne les informations de l utilisateur connecte grace au token.',
-                                'headers' => [
-                                    'Accept' => 'application/json',
-                                    'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
-                                ],
-                                'request_body' => null,
-                                'responses' => [
-                                    [
-                                        'status' => 200,
-                                        'title' => 'Succes',
-                                        'body' => [
-                                            'success' => true,
-                                            'message' => 'Utilisateur authentifie.',
-                                            'data' => [
-                                                'user' => [
-                                                    'id' => 1,
-                                                    'full_name' => 'Marie Dupont',
-                                                    'email' => 'marie@example.com',
-                                                    'email_verified_at' => null,
-                                                    'created_at' => '2026-08-31T10:00:00.000000Z',
-                                                ],
+                        ],
+                        [
+                            'name' => 'Utilisateur connecte',
+                            'method' => 'GET',
+                            'path' => '/api/auth/me',
+                            'protected' => true,
+                            'description' => 'Retourne les informations de l utilisateur connecte grace au token.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Utilisateur authentifie.',
+                                        'data' => [
+                                            'user' => [
+                                                'id' => 1,
+                                                'full_name' => 'Marie Dupont',
+                                                'email' => 'marie@example.com',
+                                                'email_verified_at' => null,
+                                                'created_at' => '2026-08-31T10:00:00.000000Z',
                                             ],
                                         ],
                                     ],
-                                    [
-                                        'status' => 401,
-                                        'title' => 'Token absent ou invalide',
-                                        'body' => [
-                                            'message' => 'Unauthenticated.',
-                                        ],
+                                ],
+                                [
+                                    'status' => 401,
+                                    'title' => 'Token absent ou invalide',
+                                    'body' => [
+                                        'message' => 'Unauthenticated.',
                                     ],
                                 ],
                             ],
-                            [
-                                'name' => 'Deconnexion',
-                                'method' => 'POST',
-                                'path' => '/api/auth/logout',
-                                'protected' => true,
-                                'description' => 'Supprime le token actuel. Apres cette requete, ce token ne fonctionne plus.',
-                                'headers' => [
-                                    'Accept' => 'application/json',
-                                    'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
-                                ],
-                                'request_body' => null,
-                                'responses' => [
-                                    [
-                                        'status' => 200,
-                                        'title' => 'Succes',
-                                        'body' => [
-                                            'success' => true,
-                                            'message' => 'Deconnexion reussie.',
-                                            'data' => null,
-                                        ],
+                        ],
+                        [
+                            'name' => 'Deconnexion',
+                            'method' => 'POST',
+                            'path' => '/api/auth/logout',
+                            'protected' => true,
+                            'description' => 'Supprime le token actuel. Apres cette requete, ce token ne fonctionne plus.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Deconnexion reussie.',
+                                        'data' => null,
                                     ],
-                                    [
-                                        'status' => 401,
-                                        'title' => 'Token absent ou invalide',
-                                        'body' => [
-                                            'message' => 'Unauthenticated.',
-                                        ],
+                                ],
+                                [
+                                    'status' => 401,
+                                    'title' => 'Token absent ou invalide',
+                                    'body' => [
+                                        'message' => 'Unauthenticated.',
                                     ],
                                 ],
                             ],
                         ],
                     ],
                 ],
-                'frontend_steps' => [
-                    'Appeler POST /api/auth/register ou POST /api/auth/login.',
-                    'Recuperer data.token.access_token dans la reponse.',
-                    'Sauvegarder le token cote frontend de maniere securisee.',
-                    'Envoyer Authorization: Bearer {access_token} pour les routes protegees.',
-                    'Appeler POST /api/auth/logout pour supprimer le token actuel.',
-                ],
-                'flutter_examples' => [
-                    [
-                        'title' => 'Packages Flutter a ajouter',
-                        'language' => 'bash',
-                        'code' => <<<'CODE'
+            ],
+            'frontend_steps' => [
+                'Appeler POST /api/auth/register ou POST /api/auth/login.',
+                'Recuperer data.token.access_token dans la reponse.',
+                'Sauvegarder le token cote frontend de maniere securisee.',
+                'Envoyer Authorization: Bearer {access_token} pour les routes protegees.',
+                'Appeler POST /api/auth/logout pour supprimer le token actuel.',
+            ],
+            'flutter_examples' => [
+                [
+                    'title' => 'Packages Flutter a ajouter',
+                    'language' => 'bash',
+                    'code' => <<<'CODE'
 flutter pub add http flutter_secure_storage
 CODE,
-                    ],
-                    [
-                        'title' => 'Choisir la bonne baseUrl',
-                        'language' => 'dart',
-                        'code' => <<<'CODE'
+                ],
+                [
+                    'title' => 'Choisir la bonne baseUrl',
+                    'language' => 'dart',
+                    'code' => <<<'CODE'
 // Android emulator
 const String baseUrl = 'http://10.0.2.2:8000/api';
 
@@ -228,11 +227,11 @@ const String baseUrl = 'http://localhost:8000/api';
 // Remplace 192.168.1.20 par l'adresse IP locale de ton ordinateur.
 const String baseUrl = 'http://192.168.1.20:8000/api';
 CODE,
-                    ],
-                    [
-                        'title' => 'Service Flutter complet pour consommer le module auth',
-                        'language' => 'dart',
-                        'code' => <<<'CODE'
+                ],
+                [
+                    'title' => 'Service Flutter complet pour consommer le module auth',
+                    'language' => 'dart',
+                    'code' => <<<'CODE'
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -347,11 +346,11 @@ class AuthApiService {
   }
 }
 CODE,
-                    ],
-                    [
-                        'title' => 'Exemple d appel depuis une page Flutter',
-                        'language' => 'dart',
-                        'code' => <<<'CODE'
+                ],
+                [
+                    'title' => 'Exemple d appel depuis une page Flutter',
+                    'language' => 'dart',
+                    'code' => <<<'CODE'
 final authApi = AuthApiService();
 
 try {
@@ -366,9 +365,101 @@ try {
   print('Erreur de connexion: $error');
 }
 CODE,
-                    ],
                 ],
             ],
+        ];
+
+        return view('docs.api', [
+            'documentation' => $documentation,
+            'markdownDocumentation' => $this->toMarkdown($documentation),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $documentation
+     */
+    private function toMarkdown(array $documentation): string
+    {
+        $lines = [
+            '# '.$documentation['title'],
+            '',
+            '- Version: '.$documentation['version'],
+            '- Base URL: `'.$documentation['base_url'].'`',
+            '- Authentication: '.$documentation['authentication_type'],
+            '',
+            '## Headers importants',
+            '',
+            $this->codeBlock('json', $documentation['important_headers']),
+            '',
+            '## Etapes cote frontend',
+            '',
+        ];
+
+        foreach ($documentation['frontend_steps'] as $index => $step) {
+            $lines[] = ($index + 1).'. '.$step;
+        }
+
+        $lines[] = '';
+
+        foreach ($documentation['modules'] as $module) {
+            $lines[] = '## '.$module['name'];
+            $lines[] = '';
+            $lines[] = $module['description'];
+            $lines[] = '';
+
+            foreach ($module['endpoints'] as $endpoint) {
+                $lines[] = '### '.$endpoint['name'];
+                $lines[] = '';
+                $lines[] = '- Method: `'.$endpoint['method'].'`';
+                $lines[] = '- Path: `'.$endpoint['path'].'`';
+                $lines[] = '- Protected: '.($endpoint['protected'] ? 'oui, token requis' : 'non, route publique');
+                $lines[] = '';
+                $lines[] = $endpoint['description'];
+                $lines[] = '';
+                $lines[] = '#### Headers';
+                $lines[] = '';
+                $lines[] = $this->codeBlock('json', $endpoint['headers']);
+                $lines[] = '';
+                $lines[] = '#### Body a envoyer';
+                $lines[] = '';
+                $lines[] = $endpoint['request_body'] === null
+                    ? 'Aucun body'
+                    : $this->codeBlock('json', $endpoint['request_body']);
+                $lines[] = '';
+
+                foreach ($endpoint['responses'] as $response) {
+                    $lines[] = '#### Reponse '.$response['status'].' - '.$response['title'];
+                    $lines[] = '';
+                    $lines[] = $this->codeBlock('json', $response['body']);
+                    $lines[] = '';
+                }
+            }
+        }
+
+        $lines[] = '## Exemples Flutter';
+        $lines[] = '';
+        $lines[] = 'Ces exemples montrent comment une app Flutter peut appeler le backend, recuperer le token Sanctum et l utiliser sur les routes protegees.';
+        $lines[] = '';
+
+        foreach ($documentation['flutter_examples'] as $example) {
+            $lines[] = '### '.$example['title'];
+            $lines[] = '';
+            $lines[] = $this->codeBlock($example['language'], $example['code']);
+            $lines[] = '';
+        }
+
+        return trim(implode("\n", $lines))."\n";
+    }
+
+    /**
+     * @param  array<string, mixed>|string|null  $content
+     */
+    private function codeBlock(string $language, array|string|null $content): string
+    {
+        if (is_array($content)) {
+            $content = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }
+
+        return "```{$language}\n{$content}\n```";
     }
 }

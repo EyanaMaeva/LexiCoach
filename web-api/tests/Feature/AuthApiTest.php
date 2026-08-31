@@ -131,6 +131,9 @@ class AuthApiTest extends TestCase
             ->assertSeeText('"success": true')
             ->assertSeeText('"access_token": "1|exempleDeTokenSanctum"')
             ->assertSeeText('Exemples Flutter')
+            ->assertSeeText('Copier la doc en .md')
+            ->assertSee('# Documentation API')
+            ->assertSee('## Exemples Flutter')
             ->assertSeeText("const String baseUrl = 'http://10.0.2.2:8000/api';")
             ->assertSeeText('class AuthApiService');
     }

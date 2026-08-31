@@ -72,6 +72,22 @@
             color: var(--muted);
         }
 
+        button {
+            border: 0;
+            border-radius: 7px;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 800;
+            min-height: 42px;
+            padding: 9px 14px;
+        }
+
+        button:hover {
+            background: #0b5f59;
+        }
+
         main {
             padding: 28px 0 56px;
             display: grid;
@@ -125,6 +141,36 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 16px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .copy-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .copy-status {
+            color: var(--accent);
+            font-size: .9rem;
+            font-weight: 800;
+            min-height: 22px;
+        }
+
+        .markdown-source {
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
         }
 
         .pill {
@@ -214,6 +260,14 @@
         }
 
         @media (max-width: 820px) {
+            .header-top {
+                display: grid;
+            }
+
+            .copy-actions {
+                justify-content: flex-start;
+            }
+
             main {
                 grid-template-columns: 1fr;
             }
@@ -227,14 +281,26 @@
 <body>
     <header>
         <div class="header-inner">
-            <h1>{{ $documentation['title'] }}</h1>
-            <p>Base URL: <code>{{ $documentation['base_url'] }}</code></p>
+            <div class="header-top">
+                <div>
+                    <h1>{{ $documentation['title'] }}</h1>
+                    <p>Base URL: <code>{{ $documentation['base_url'] }}</code></p>
+                </div>
+
+                <div class="copy-actions">
+                    <button type="button" id="copy-markdown-button">Copier la doc en .md</button>
+                    <span class="copy-status" id="copy-markdown-status" aria-live="polite"></span>
+                </div>
+            </div>
+
             <div class="meta">
                 <span class="pill">Version {{ $documentation['version'] }}</span>
                 <span class="pill neutral">{{ $documentation['authentication_type'] }}</span>
             </div>
         </div>
     </header>
+
+    <textarea class="markdown-source" id="markdown-documentation" aria-hidden="true" tabindex="-1">{{ $markdownDocumentation }}</textarea>
 
     <main>
         <nav aria-label="Modules de documentation">
@@ -317,5 +383,29 @@
             </section>
         </div>
     </main>
+
+    <script>
+        const copyButton = document.getElementById('copy-markdown-button');
+        const copyStatus = document.getElementById('copy-markdown-status');
+        const markdownDocumentation = document.getElementById('markdown-documentation');
+
+        copyButton?.addEventListener('click', async () => {
+            const markdown = markdownDocumentation.value;
+
+            try {
+                await navigator.clipboard.writeText(markdown);
+                copyStatus.textContent = 'Doc .md copiee';
+            } catch (error) {
+                markdownDocumentation.focus();
+                markdownDocumentation.select();
+                document.execCommand('copy');
+                copyStatus.textContent = 'Doc .md copiee';
+            }
+
+            window.setTimeout(() => {
+                copyStatus.textContent = '';
+            }, 2500);
+        });
+    </script>
 </body>
 </html>

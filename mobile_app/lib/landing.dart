@@ -13,7 +13,7 @@ class _LandingPageState extends State<LandingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7FF),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -27,7 +27,7 @@ class _LandingPageState extends State<LandingPage> {
                 const Text(
                   "LexiCoach",
                   style: TextStyle(
-                    color: Color(0xFF6547E8),
+                    color: Color(0xFF5E45C5),
                     fontSize: 40,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
@@ -42,45 +42,17 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
                 
-                const SizedBox(height: 50),
+                const SizedBox(height: 20),
                 
                 // Hero Section / Visual Element
                 Container(
-                  width: 240,
-                  height: 240,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6547E8).withOpacity(0.1),
-                        blurRadius: 40,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
+                  width: double.infinity*0.8,
                   child: Center(
-                    child: Container(
-                      width: 180,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6547E8), Color(0xFF8B71F7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.auto_stories_rounded,
-                        size: 90,
-                        color: Colors.white,
-                      ),
-                    ),
+                 child: Image.asset("assets/images/landing_img.jpeg"),
                   ),
                 ),
                 
-                const SizedBox(height: 50),
+                const SizedBox(height: 20),
                 
                 // Main Headline
                 const Text(
@@ -94,7 +66,7 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
                 
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 
                 // Action Buttons
                 SizedBox(
@@ -158,7 +130,7 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ),
                 
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 
                 // Footer
                 const Text(

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'practice_exercises.dart';
 import 'reading_practice.dart';
 
 class Dashboard extends StatefulWidget {
   final String userName;
-  const Dashboard({super.key, this.userName = "Emma"});
+  const Dashboard({super.key, this.userName = "User"});
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -36,13 +37,18 @@ class _DashboardState extends State<Dashboard> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Hello, ${widget.userName}! 👋",
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF222033),
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            "Hello, ${widget.userName}!",
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF222033),
+                            ),
+                          ),
+                          Lottie.asset("assets/lotties/hand wave.json",width: 50,height: 50)
+                        ],
                       ),
                       const SizedBox(height: 4),
                       const Text(

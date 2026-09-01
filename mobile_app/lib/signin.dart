@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'dashboard.dart';
+import 'auth_module.dart';
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
 
@@ -21,17 +22,7 @@ class _SignInState extends State<SignIn> {
     passwordController.dispose();
     super.dispose();
   }
-  void login(){
-    print("Email: ${emailController.text}");
-    print("Passwors: ${passwordController.text}");
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const Dashboard(),
-      ),
-    );
-  }
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F7FF),
@@ -59,6 +50,7 @@ class _SignInState extends State<SignIn> {
 
               // Logo
               const Center(
+                
                 child: Text(
                   "LexiCoach",
                   style: TextStyle(
@@ -178,14 +170,48 @@ class _SignInState extends State<SignIn> {
                 height: 60,
 
                 child: ElevatedButton(
-                  onPressed: login,
+                  onPressed: () async {
+                    final authApi = AuthApiService();
+
+                    try {
+                      final response = await authApi.login(
+                        email: emailController.text.trim(),
+                        password: passwordController.text,
+                      );
+
+                      final user = response['data']['user'];
+
+                      print('Connecté : ${user['full_name']}');
+
+                      if (!mounted) return;
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Dashboard(
+                            userName: user['full_name'].toString().split(' ')[0],
+                          ),
+                        ),
+                      );
+                    } catch (error) {
+                      print('Erreur : $error');
+
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(error.toString()),
+                        ),
+                      );
+                    }
+                  },
 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6547E8),
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(55),
                     ),
                   ),
 

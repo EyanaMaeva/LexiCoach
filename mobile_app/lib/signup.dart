@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signin.dart';
 import 'dashboard.dart';
+import 'auth_module.dart';
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
@@ -25,26 +26,55 @@ class _SignUpPageState extends State<SignUpPage> {
     confirmPasswordController.dispose();
     super.dispose();
   }
+  Future<void> createAccount() async {
+    // Check that passwords match
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Passwords do not match."),
+        ),
+      );
 
-void createAccount() {
-if (passwordController.text !=
-confirmPasswordController.text) {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text("Passwords do not match."),
-),
-);
+      return;
+    }
 
-return;
-}
+    try {
+      final authApi = AuthApiService();
 
-Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (context) => Dashboard(userName: nameController.text.split(' ')[0]),
-  ),
-);
-}
+      final response = await authApi.register(
+        fullName: nameController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text,
+        passwordConfirmation: confirmPasswordController.text,
+      );
+
+      final user = response['data']['user'];
+
+      print('Account created: ${user['full_name']}');
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Dashboard(
+            userName: user['full_name'].toString().split(' ')[0],
+          ),
+        ),
+      );
+    } catch (error) {
+      print('Registration error: $error');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+        ),
+      );
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F7FF),

@@ -197,13 +197,299 @@ class ApiDocumentationController extends Controller
                         ],
                     ],
                 ],
+                [
+                    'name' => 'Reading exercises',
+                    'slug' => 'reading-exercises',
+                    'description' => 'Module pour recuperer des exercices de lecture et evaluer le texte reconnu par le micro cote Flutter.',
+                    'endpoints' => [
+                        [
+                            'name' => 'Liste des exercices',
+                            'method' => 'GET',
+                            'path' => '/api/reading-exercises',
+                            'protected' => true,
+                            'description' => 'Retourne les exercices actifs. Flutter affiche ensuite le text, la langue et le niveau.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Exercices de lecture recuperes.',
+                                        'data' => [
+                                            'exercises' => [
+                                                [
+                                                    'id' => 1,
+                                                    'title' => 'Museum visit',
+                                                    'text' => 'The children visited the beautiful museum yesterday.',
+                                                    'language' => 'en-US',
+                                                    'level' => 'beginner',
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Detail d un exercice',
+                            'method' => 'GET',
+                            'path' => '/api/reading-exercises/{readingExercise}',
+                            'protected' => true,
+                            'description' => 'Retourne un seul exercice. Le champ language aide Flutter a choisir la voix TTS et la langue STT.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Exercice de lecture recupere.',
+                                        'data' => [
+                                            'exercise' => [
+                                                'id' => 1,
+                                                'title' => 'Museum visit',
+                                                'text' => 'The children visited the beautiful museum yesterday.',
+                                                'language' => 'en-US',
+                                                'level' => 'beginner',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                                [
+                                    'status' => 404,
+                                    'title' => 'Exercice absent ou inactif',
+                                    'body' => [
+                                        'message' => 'Not Found',
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Evaluer une lecture',
+                            'method' => 'POST',
+                            'path' => '/api/reading-exercises/{readingExercise}/evaluate',
+                            'protected' => true,
+                            'description' => 'Compare le transcript envoye par Flutter avec le text officiel stocke en base.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => [
+                                'transcript' => 'The children visited beautiful museum yesterday.',
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Lecture evaluee.',
+                                        'data' => [
+                                            'exercise' => [
+                                                'id' => 1,
+                                                'title' => 'Museum visit',
+                                                'text' => 'The children visited the beautiful museum yesterday.',
+                                                'language' => 'en-US',
+                                                'level' => 'beginner',
+                                            ],
+                                            'result' => [
+                                                'score' => 86,
+                                                'status' => 'good',
+                                                'is_correct' => false,
+                                                'transcript' => 'The children visited beautiful museum yesterday.',
+                                                'words' => [
+                                                    [
+                                                        'expected' => 'The',
+                                                        'actual' => 'The',
+                                                        'status' => 'correct',
+                                                    ],
+                                                    [
+                                                        'expected' => 'children',
+                                                        'actual' => 'children',
+                                                        'status' => 'correct',
+                                                    ],
+                                                    [
+                                                        'expected' => 'visited',
+                                                        'actual' => 'visited',
+                                                        'status' => 'correct',
+                                                    ],
+                                                    [
+                                                        'expected' => 'the',
+                                                        'actual' => null,
+                                                        'status' => 'missing',
+                                                    ],
+                                                ],
+                                                'feedback' => [
+                                                    'title' => 'Good job!',
+                                                    'message' => 'You read most of the sentence correctly. Try again and focus on the highlighted words.',
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                                [
+                                    'status' => 422,
+                                    'title' => 'Transcript manquant',
+                                    'body' => [
+                                        'message' => 'The transcript field is required.',
+                                        'errors' => [
+                                            'transcript' => ['The transcript field is required.'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
             ],
             'frontend_steps' => [
                 'Appeler POST /api/auth/register ou POST /api/auth/login.',
                 'Recuperer data.token.access_token dans la reponse.',
                 'Sauvegarder le token cote frontend de maniere securisee.',
                 'Envoyer Authorization: Bearer {access_token} pour les routes protegees.',
+                'Pour Reading Practice, utiliser flutter_tts pour lire le text et speech_to_text pour obtenir le transcript.',
+                'Envoyer seulement le transcript au backend. Le backend compare avec le text officiel de l exercice.',
                 'Appeler POST /api/auth/logout pour supprimer le token actuel.',
+            ],
+            'feature_guides' => [
+                [
+                    'title' => 'Scenario 1 - Inscription',
+                    'goal' => 'Permettre a une nouvelle utilisatrice de creer son compte et d entrer dans l application.',
+                    'user_story' => 'L utilisatrice remplit son nom, son email, son mot de passe et confirme son mot de passe. Elle appuie sur Sign up.',
+                    'frontend_tasks' => [
+                        'Verifier que les champs ne sont pas vides avant d appeler l API.',
+                        'Verifier que password et password_confirmation sont identiques.',
+                        'Afficher un loader pendant l appel API pour eviter les doubles clics.',
+                        'Sauvegarder data.token.access_token si l inscription reussit.',
+                        'Rediriger vers le dashboard ou vers Practice Exercises apres le succes.',
+                    ],
+                    'api_flow' => [
+                        'POST /api/auth/register',
+                        'Le backend cree le User.',
+                        'Le backend retourne le user et un token Sanctum.',
+                    ],
+                    'display_rules' => [
+                        'Si success vaut true, afficher un message de succes court.',
+                        'Si Laravel retourne 422, afficher les erreurs sous les champs concernes.',
+                        'Ne jamais afficher le password dans l interface ou dans les logs.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 2 - Connexion',
+                    'goal' => 'Permettre a une utilisatrice existante de recuperer son token et d acceder aux routes protegees.',
+                    'user_story' => 'L utilisatrice entre son email et son mot de passe, puis appuie sur Login.',
+                    'frontend_tasks' => [
+                        'Envoyer email, password et device_name au backend.',
+                        'Sauvegarder le token dans flutter_secure_storage.',
+                        'Garder le user connecte en memoire pour afficher son nom dans l app.',
+                        'Ajouter Authorization: Bearer {token} sur toutes les routes protegees.',
+                    ],
+                    'api_flow' => [
+                        'POST /api/auth/login',
+                        'Le backend verifie email et password.',
+                        'Le backend retourne le user et un token si les identifiants sont bons.',
+                    ],
+                    'display_rules' => [
+                        'Si la reponse est 401, afficher que les identifiants sont incorrects.',
+                        'Si la reponse est 422, afficher les erreurs de validation.',
+                        'Ne pas rediriger tant que le token n est pas sauvegarde.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 3 - Ouvrir Reading Practice',
+                    'goal' => 'Afficher a l utilisatrice une phrase officielle a lire.',
+                    'user_story' => 'L utilisatrice clique sur Practice Exercises, choisit Reading, puis voit une phrase a lire.',
+                    'frontend_tasks' => [
+                        'Verifier que le token existe avant de charger la page.',
+                        'Appeler GET /api/reading-exercises pour recuperer les exercices disponibles.',
+                        'Afficher le premier exercice ou laisser l utilisatrice en choisir un.',
+                        'Garder exercise.id, exercise.text et exercise.language dans l etat de la page.',
+                    ],
+                    'api_flow' => [
+                        'GET /api/reading-exercises',
+                        'Optionnel: GET /api/reading-exercises/{readingExercise} pour recharger un exercice precis.',
+                    ],
+                    'display_rules' => [
+                        'Afficher un loader pendant le chargement.',
+                        'Afficher le texte de exercise.text exactement comme le backend le retourne.',
+                        'Si la reponse est 401, renvoyer vers l ecran de login.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 4 - Bouton Listen avec TTS',
+                    'goal' => 'Permettre a l utilisatrice d ecouter la bonne lecture avant de parler.',
+                    'user_story' => 'L utilisatrice appuie sur Listen. Le telephone lit la phrase avec une voix claire.',
+                    'frontend_tasks' => [
+                        'Utiliser le package flutter_tts cote Flutter.',
+                        'Utiliser exercise.language pour choisir la langue, par exemple en-US.',
+                        'Lire exercise.text avec flutterTts.speak(exercise.text).',
+                        'Ajouter une option Slow si besoin avec une vitesse plus basse.',
+                    ],
+                    'api_flow' => [
+                        'Aucun appel backend n est necessaire pour le TTS dans le MVP.',
+                        'Le backend fournit seulement le texte et la langue de l exercice.',
+                    ],
+                    'display_rules' => [
+                        'Desactiver temporairement le bouton Listen pendant la lecture audio.',
+                        'Prevoir un bouton Stop si la lecture est longue.',
+                        'Ne pas envoyer le texte au backend pour le faire lire dans cette version.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 5 - Bouton Micro avec STT',
+                    'goal' => 'Transformer ce que l utilisatrice dit en texte reconnu.',
+                    'user_story' => 'L utilisatrice appuie sur le micro, lit la phrase a voix haute, puis l app affiche ce qu elle a dit.',
+                    'frontend_tasks' => [
+                        'Demander la permission microphone avant de commencer.',
+                        'Utiliser le package speech_to_text cote Flutter.',
+                        'Utiliser exercise.language comme locale de reconnaissance vocale.',
+                        'Afficher le transcript en direct si le package le permet.',
+                        'Garder le dernier transcript reconnu dans l etat de la page.',
+                    ],
+                    'api_flow' => [
+                        'Aucun audio n est envoye au backend dans le MVP.',
+                        'Le backend recevra seulement le transcript final.',
+                    ],
+                    'display_rules' => [
+                        'Afficher Listening pendant que le micro ecoute.',
+                        'Afficher un message clair si la permission micro est refusee.',
+                        'Ne pas appeler evaluate tant que transcript est vide.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 6 - Evaluation de la lecture',
+                    'goal' => 'Comparer le transcript avec le texte officiel et afficher un feedback utile.',
+                    'user_story' => 'Apres avoir parle, l utilisatrice appuie sur Check ou l app lance l evaluation automatiquement.',
+                    'frontend_tasks' => [
+                        'Envoyer seulement transcript au backend.',
+                        'Ne pas envoyer expected_text depuis Flutter, car le backend est la source de verite.',
+                        'Lire data.result.score pour afficher le pourcentage.',
+                        'Lire data.result.words pour colorer les mots corrects, manquants, incorrects ou en trop.',
+                        'Lire data.result.feedback.title et message pour afficher le feedback.',
+                    ],
+                    'api_flow' => [
+                        'POST /api/reading-exercises/{readingExercise}/evaluate',
+                        'Le backend recupere exercise.text en base.',
+                        'Le backend compare exercise.text avec transcript.',
+                        'Le backend retourne score, status, is_correct, words et feedback.',
+                    ],
+                    'display_rules' => [
+                        'Si is_correct vaut true, afficher une felicitation.',
+                        'Si status vaut good, encourager a reessayer les mots surlignes.',
+                        'Si status vaut needs_practice, proposer Listen puis Try again.',
+                        'Si la reponse est 422, verifier que transcript n est pas vide.',
+                    ],
+                ],
             ],
             'flutter_examples' => [
                 [
@@ -211,6 +497,9 @@ class ApiDocumentationController extends Controller
                     'language' => 'bash',
                     'code' => <<<'CODE'
 flutter pub add http flutter_secure_storage
+
+# Pour le module Reading Practice cote mobile
+flutter pub add flutter_tts speech_to_text
 CODE,
                 ],
                 [
@@ -366,6 +655,29 @@ try {
 }
 CODE,
                 ],
+                [
+                    'title' => 'Evaluer une lecture depuis Flutter',
+                    'language' => 'dart',
+                    'code' => <<<'CODE'
+final response = await client.post(
+  Uri.parse('$baseUrl/reading-exercises/1/evaluate'),
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  },
+  body: jsonEncode({
+    'transcript': 'The children visited beautiful museum yesterday.',
+  }),
+);
+
+final data = jsonDecode(response.body) as Map<String, dynamic>;
+final result = data['data']['result'];
+
+print('Score: ${result['score']}');
+print('Feedback: ${result['feedback']['message']}');
+CODE,
+                ],
             ],
         ];
 
@@ -400,6 +712,41 @@ CODE,
         }
 
         $lines[] = '';
+        $lines[] = '## Scenarios et role du frontend';
+        $lines[] = '';
+
+        foreach ($documentation['feature_guides'] as $guide) {
+            $lines[] = '### '.$guide['title'];
+            $lines[] = '';
+            $lines[] = '**Objectif:** '.$guide['goal'];
+            $lines[] = '';
+            $lines[] = '**Scenario utilisateur:** '.$guide['user_story'];
+            $lines[] = '';
+            $lines[] = '#### Ce que le frontend doit faire';
+            $lines[] = '';
+
+            foreach ($guide['frontend_tasks'] as $task) {
+                $lines[] = '- '.$task;
+            }
+
+            $lines[] = '';
+            $lines[] = '#### Parcours API';
+            $lines[] = '';
+
+            foreach ($guide['api_flow'] as $step) {
+                $lines[] = '- '.$step;
+            }
+
+            $lines[] = '';
+            $lines[] = '#### Regles d affichage';
+            $lines[] = '';
+
+            foreach ($guide['display_rules'] as $rule) {
+                $lines[] = '- '.$rule;
+            }
+
+            $lines[] = '';
+        }
 
         foreach ($documentation['modules'] as $module) {
             $lines[] = '## '.$module['name'];

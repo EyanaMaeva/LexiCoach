@@ -9,15 +9,26 @@
             color-scheme: light;
             --bg: #f6f8fb;
             --panel: #ffffff;
-            --ink: #17202a;
-            --muted: #5f6f83;
-            --line: #d8e0ea;
-            --accent: #0f766e;
-            --accent-soft: #d9f4ef;
-            --code-bg: #111827;
-            --code-ink: #e5e7eb;
-            --warning: #8a4b05;
-            --warning-bg: #fff3d6;
+            --panel-soft: #f8fafc;
+            --ink: #202638;
+            --muted: #697386;
+            --line: #e0e7ef;
+            --line-strong: #cbd5e1;
+            --accent: #707a95;
+            --accent-dark: #525d76;
+            --accent-soft: #eef1f7;
+            --mint: #edf6f0;
+            --mint-ink: #597565;
+            --sky: #edf5fa;
+            --sky-ink: #5c7485;
+            --rose: #f8edf1;
+            --rose-ink: #82616d;
+            --amber: #f8f1dd;
+            --amber-ink: #806f48;
+            --code-bg: #263044;
+            --code-ink: #eef2f7;
+            --shadow: 0 14px 32px rgba(54, 65, 82, .09);
+            --shadow-soft: 0 8px 20px rgba(54, 65, 82, .06);
         }
 
         * {
@@ -28,13 +39,13 @@
             margin: 0;
             background: var(--bg);
             color: var(--ink);
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             line-height: 1.55;
         }
 
         header {
             border-bottom: 1px solid var(--line);
-            background: var(--panel);
+            background: #eef3f7;
         }
 
         .header-inner,
@@ -44,7 +55,7 @@
         }
 
         .header-inner {
-            padding: 28px 0;
+            padding: 34px 0 30px;
         }
 
         h1,
@@ -55,16 +66,22 @@
         }
 
         h1 {
-            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-size: clamp(2.1rem, 5vw, 3.35rem);
+            letter-spacing: 0;
+            max-width: 760px;
         }
 
         h2 {
+            align-items: center;
+            display: flex;
             font-size: 1.45rem;
-            margin-bottom: 14px;
+            gap: 10px;
+            margin-bottom: 12px;
         }
 
         h3 {
             font-size: 1.05rem;
+            letter-spacing: 0;
         }
 
         p {
@@ -73,11 +90,15 @@
         }
 
         button {
-            border: 0;
-            border-radius: 7px;
+            align-items: center;
+            border: 1px solid var(--accent-dark);
+            border-radius: 8px;
             background: var(--accent);
+            box-shadow: var(--shadow-soft);
             color: white;
             cursor: pointer;
+            display: inline-flex;
+            gap: 8px;
             font: inherit;
             font-weight: 800;
             min-height: 42px;
@@ -85,19 +106,18 @@
         }
 
         button:hover {
-            background: #0b5f59;
+            background: var(--accent-dark);
         }
 
         main {
-            padding: 28px 0 56px;
+            padding: 30px 0 64px;
             display: grid;
-            grid-template-columns: 260px minmax(0, 1fr);
+            grid-template-columns: 268px minmax(0, 1fr);
             gap: 24px;
             align-items: start;
         }
 
         nav,
-        section,
         article {
             background: var(--panel);
             border: 1px solid var(--line);
@@ -105,42 +125,60 @@
         }
 
         nav {
+            box-shadow: var(--shadow-soft);
             position: sticky;
             top: 20px;
-            padding: 18px;
+            padding: 16px;
+        }
+
+        nav strong {
+            align-items: center;
+            color: var(--muted);
+            display: flex;
+            font-size: .78rem;
+            gap: 8px;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
         }
 
         nav a {
-            display: block;
+            align-items: center;
+            border-radius: 7px;
             color: var(--ink);
+            display: flex;
+            gap: 10px;
             text-decoration: none;
-            padding: 8px 0;
+            padding: 10px;
             font-weight: 650;
         }
 
         nav a:hover {
-            color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-dark);
         }
 
         .content {
             display: grid;
-            gap: 18px;
+            gap: 26px;
         }
 
         section {
-            padding: 22px;
+            scroll-margin-top: 24px;
         }
 
         article {
-            padding: 18px;
+            box-shadow: var(--shadow-soft);
             margin-top: 14px;
+            overflow: hidden;
+            padding: 18px;
         }
 
         .meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 18px;
         }
 
         .header-top {
@@ -174,30 +212,32 @@
         }
 
         .pill {
+            border: 1px solid var(--line);
             display: inline-flex;
             align-items: center;
+            gap: 7px;
             min-height: 30px;
-            border-radius: 999px;
+            border-radius: 8px;
             padding: 5px 10px;
             background: var(--accent-soft);
-            color: #07534d;
+            color: var(--accent-dark);
             font-size: .88rem;
             font-weight: 700;
         }
 
         .pill.neutral {
-            background: #e9eef5;
-            color: #344256;
+            background: var(--sky);
+            color: var(--sky-ink);
         }
 
         .pill.warning {
-            background: var(--warning-bg);
-            color: var(--warning);
+            background: var(--amber);
+            color: var(--amber-ink);
         }
 
         .endpoint-title {
             display: flex;
-            gap: 10px;
+            gap: 11px;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -207,22 +247,40 @@
             text-align: center;
             border-radius: 6px;
             padding: 5px 8px;
-            background: #183a5a;
+            background: var(--ink);
+            box-shadow: none;
             color: white;
             font-size: .82rem;
             font-weight: 800;
         }
 
+        .method-get {
+            background: #6f8f7c;
+        }
+
+        .method-post {
+            background: #817a9f;
+        }
+
         .path {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            color: #354158;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: .92rem;
             overflow-wrap: anywhere;
+            padding: 5px 8px;
         }
 
         .block {
-            margin-top: 14px;
+            margin-top: 16px;
         }
 
         .block-title {
+            align-items: center;
+            display: flex;
+            gap: 8px;
             margin: 0 0 8px;
             color: var(--ink);
             font-weight: 800;
@@ -230,7 +288,7 @@
 
         pre {
             margin: 0;
-            padding: 14px;
+            padding: 15px;
             overflow: auto;
             background: var(--code-bg);
             color: var(--code-ink);
@@ -244,19 +302,227 @@
         }
 
         ol {
-            margin: 10px 0 0;
-            padding-left: 20px;
+            counter-reset: steps;
+            display: grid;
+            gap: 10px;
+            list-style: none;
+            margin: 14px 0 0;
+            padding: 0;
+        }
+
+        ol li {
+            align-items: start;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: #354158;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 30px minmax(0, 1fr);
+            padding: 11px 12px;
+        }
+
+        ol li::before {
+            align-items: center;
+            background: var(--mint);
+            border-radius: 7px;
+            color: var(--mint-ink);
+            content: counter(steps);
+            counter-increment: steps;
+            display: inline-flex;
+            font-size: .82rem;
+            font-weight: 900;
+            height: 30px;
+            justify-content: center;
+            width: 30px;
         }
 
         .language {
-            color: var(--muted);
+            background: var(--rose);
+            border-radius: 7px;
+            color: var(--rose-ink);
             font-size: .85rem;
             font-weight: 700;
+            padding: 4px 8px;
             text-transform: uppercase;
         }
 
-        li + li {
-            margin-top: 6px;
+        .eyebrow {
+            align-items: center;
+            color: var(--accent-dark);
+            display: inline-flex;
+            font-size: .82rem;
+            font-weight: 850;
+            gap: 8px;
+            letter-spacing: .08em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .icon {
+            display: inline-block;
+            flex: 0 0 auto;
+            height: 18px;
+            width: 18px;
+        }
+
+        .icon-box {
+            align-items: center;
+            background: var(--accent-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--accent-dark);
+            display: inline-flex;
+            flex: 0 0 auto;
+            height: 36px;
+            justify-content: center;
+            width: 36px;
+        }
+
+        .icon-box.mint {
+            background: var(--mint);
+            color: var(--mint-ink);
+        }
+
+        .icon-box.sky {
+            background: var(--sky);
+            color: var(--sky-ink);
+        }
+
+        .icon-box.rose {
+            background: var(--rose);
+            color: var(--rose-ink);
+        }
+
+        .nav-dot {
+            background: var(--mint);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            height: 11px;
+            width: 11px;
+        }
+
+        .section-heading {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .section-heading h2 {
+            margin-bottom: 0;
+        }
+
+        .section-description {
+            max-width: 740px;
+        }
+
+        .intro-panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+
+        .endpoint-card {
+            border-top: 5px solid var(--accent);
+        }
+
+        .endpoint-card.is-protected {
+            border-top-color: #d7c384;
+        }
+
+        .endpoint-card.is-public {
+            border-top-color: #a8ccb7;
+        }
+
+        .guide-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .guide-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+        }
+
+        .guide-card-header {
+            background: var(--panel-soft);
+            border-bottom: 1px solid var(--line);
+            padding: 16px 18px;
+        }
+
+        .guide-card-header p {
+            max-width: 820px;
+        }
+
+        .guide-tag {
+            align-items: center;
+            background: var(--mint);
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            color: var(--mint-ink);
+            display: inline-flex;
+            font-size: .78rem;
+            font-weight: 850;
+            gap: 7px;
+            margin-bottom: 9px;
+            padding: 5px 8px;
+            text-transform: uppercase;
+        }
+
+        .guide-body {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            padding: 16px 18px 18px;
+        }
+
+        .guide-list {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .guide-list h4 {
+            align-items: center;
+            color: var(--ink);
+            display: flex;
+            font-size: .92rem;
+            gap: 8px;
+            margin: 0 0 10px;
+        }
+
+        .guide-list ul {
+            display: grid;
+            gap: 8px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .guide-list li {
+            color: #3d485f;
+            font-size: .93rem;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .guide-list li::before {
+            background: var(--accent);
+            border-radius: 999px;
+            content: "";
+            height: 6px;
+            left: 2px;
+            position: absolute;
+            top: .66em;
+            width: 6px;
         }
 
         @media (max-width: 820px) {
@@ -275,6 +541,15 @@
             nav {
                 position: static;
             }
+
+            .header-inner,
+            main {
+                width: min(100% - 24px, 1120px);
+            }
+
+            .guide-body {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -283,19 +558,45 @@
         <div class="header-inner">
             <div class="header-top">
                 <div>
+                    <span class="eyebrow">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M6 3h8l4 4v14H6V3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M14 3v5h5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M9 13h6M9 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        LexiCoach Backend
+                    </span>
                     <h1>{{ $documentation['title'] }}</h1>
                     <p>Base URL: <code>{{ $documentation['base_url'] }}</code></p>
                 </div>
 
                 <div class="copy-actions">
-                    <button type="button" id="copy-markdown-button">Copier la doc en .md</button>
+                    <button type="button" id="copy-markdown-button">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M8 8V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M4 8h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4V8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        Copier la doc en .md
+                    </button>
                     <span class="copy-status" id="copy-markdown-status" aria-live="polite"></span>
                 </div>
             </div>
 
             <div class="meta">
-                <span class="pill">Version {{ $documentation['version'] }}</span>
-                <span class="pill neutral">{{ $documentation['authentication_type'] }}</span>
+                <span class="pill">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Version {{ $documentation['version'] }}
+                </span>
+                <span class="pill neutral">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 3 5 6v5c0 4.5 2.9 8.6 7 10 4.1-1.4 7-5.5 7-10V6l-7-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="m9 12 2 2 4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    {{ $documentation['authentication_type'] }}
+                </span>
             </div>
         </div>
     </header>
@@ -304,21 +605,43 @@
 
     <main>
         <nav aria-label="Modules de documentation">
-            <strong>Modules</strong>
+            <strong>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Modules
+            </strong>
             @foreach ($documentation['modules'] as $module)
-                <a href="#{{ $module['slug'] }}">{{ $module['name'] }}</a>
+            <a href="#{{ $module['slug'] }}"><span class="nav-dot"></span>{{ $module['name'] }}</a>
             @endforeach
-            <a href="#flutter">Exemples Flutter</a>
+            <a href="#scenarios"><span class="nav-dot"></span>Scenarios frontend</a>
+            <a href="#flutter"><span class="nav-dot"></span>Exemples Flutter</a>
         </nav>
 
         <div class="content">
-            <section>
-                <h2>Headers importants</h2>
+            <section class="intro-panel">
+                <div class="section-heading">
+                    <span class="icon-box sky">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 3 5 6v5c0 4.5 2.9 8.6 7 10 4.1-1.4 7-5.5 7-10V6l-7-3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <h2>Headers importants</h2>
+                </div>
                 <pre><code>{{ json_encode($documentation['important_headers'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</code></pre>
             </section>
 
             <section>
-                <h2>Etapes cote frontend</h2>
+                <div class="section-heading">
+                    <span class="icon-box mint">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 5h16M4 12h16M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="m8 8 4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <h2>Etapes cote frontend</h2>
+                </div>
                 <ol>
                     @foreach ($documentation['frontend_steps'] as $step)
                         <li>{{ $step }}</li>
@@ -326,15 +649,101 @@
                 </ol>
             </section>
 
+            <section id="scenarios">
+                <div class="section-heading">
+                    <span class="icon-box sky">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M5 6h14M5 12h9M5 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="m16 10 3 2-3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <h2>Scenarios et role du frontend</h2>
+                </div>
+                <p class="section-description">Ces scenarios expliquent le deroulement attendu dans l application mobile et les appels API a faire pour chaque fonctionnalite.</p>
+
+                <div class="guide-grid">
+                    @foreach ($documentation['feature_guides'] as $guide)
+                        <article class="guide-card">
+                            <div class="guide-card-header">
+                                <span class="guide-tag">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M9 18h6M10 22h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M8 14a6 6 0 1 1 8 0c-.8.7-1 1.4-1 2H9c0-.6-.2-1.3-1-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                    </svg>
+                                    Scenario
+                                </span>
+                                <h3>{{ $guide['title'] }}</h3>
+                                <p>{{ $guide['goal'] }}</p>
+                                <p><strong>Utilisateur:</strong> {{ $guide['user_story'] }}</p>
+                            </div>
+
+                            <div class="guide-body">
+                                <div class="guide-list">
+                                    <h4>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M9 11 12 14 22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                        Frontend
+                                    </h4>
+                                    <ul>
+                                        @foreach ($guide['frontend_tasks'] as $task)
+                                            <li>{{ $task }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+
+                                <div class="guide-list">
+                                    <h4>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                        API
+                                    </h4>
+                                    <ul>
+                                        @foreach ($guide['api_flow'] as $step)
+                                            <li>{{ $step }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+
+                                <div class="guide-list">
+                                    <h4>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                            <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                            <path d="M10.3 4.4 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.4a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                        </svg>
+                                        Affichage
+                                    </h4>
+                                    <ul>
+                                        @foreach ($guide['display_rules'] as $rule)
+                                            <li>{{ $rule }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+
             @foreach ($documentation['modules'] as $module)
                 <section id="{{ $module['slug'] }}">
-                    <h2>{{ $module['name'] }}</h2>
-                    <p>{{ $module['description'] }}</p>
+                    <div class="section-heading">
+                        <span class="icon-box rose">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M5 5h6v6H5V5ZM13 5h6v6h-6V5ZM5 13h6v6H5v-6ZM13 13h6v6h-6v-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <h2>{{ $module['name'] }}</h2>
+                    </div>
+                    <p class="section-description">{{ $module['description'] }}</p>
 
                     @foreach ($module['endpoints'] as $endpoint)
-                        <article>
+                        <article class="endpoint-card {{ $endpoint['protected'] ? 'is-protected' : 'is-public' }}">
                             <div class="endpoint-title">
-                                <span class="method">{{ $endpoint['method'] }}</span>
+                                <span class="method method-{{ strtolower($endpoint['method']) }}">{{ $endpoint['method'] }}</span>
                                 <h3>{{ $endpoint['name'] }}</h3>
                                 <span class="path">{{ $endpoint['path'] }}</span>
                                 <span class="pill {{ $endpoint['protected'] ? 'warning' : 'neutral' }}">
@@ -345,18 +754,35 @@
                             <p>{{ $endpoint['description'] }}</p>
 
                             <div class="block">
-                                <div class="block-title">Headers</div>
+                                <div class="block-title">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Headers
+                                </div>
                                 <pre><code>{{ json_encode($endpoint['headers'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</code></pre>
                             </div>
 
                             <div class="block">
-                                <div class="block-title">Body a envoyer</div>
+                                <div class="block-title">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                        <path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    Body a envoyer
+                                </div>
                                 <pre><code>{{ $endpoint['request_body'] === null ? 'Aucun body' : json_encode($endpoint['request_body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</code></pre>
                             </div>
 
                             @foreach ($endpoint['responses'] as $response)
                                 <div class="block">
-                                    <div class="block-title">Reponse {{ $response['status'] }} - {{ $response['title'] }}</div>
+                                    <div class="block-title">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                        Reponse {{ $response['status'] }} - {{ $response['title'] }}
+                                    </div>
                                     <pre><code>{{ json_encode($response['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</code></pre>
                                 </div>
                             @endforeach
@@ -366,11 +792,19 @@
             @endforeach
 
             <section id="flutter">
-                <h2>Exemples Flutter</h2>
-                <p>Ces exemples montrent comment une app Flutter peut appeler le backend, recuperer le token Sanctum et l'utiliser sur les routes protegees.</p>
+                <div class="section-heading">
+                    <span class="icon-box">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M7 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <h2>Exemples Flutter</h2>
+                </div>
+                <p class="section-description">Ces exemples montrent comment une app Flutter peut appeler le backend, recuperer le token Sanctum et l'utiliser sur les routes protegees.</p>
 
                 @foreach ($documentation['flutter_examples'] as $example)
-                    <article>
+                    <article class="endpoint-card">
                         <div class="endpoint-title">
                             <h3>{{ $example['title'] }}</h3>
                             <span class="language">{{ $example['language'] }}</span>

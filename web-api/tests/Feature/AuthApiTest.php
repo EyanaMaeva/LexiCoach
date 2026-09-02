@@ -130,6 +130,8 @@ class AuthApiTest extends TestCase
             ->assertSeeText('/api/auth/logout')
             ->assertSeeText('"success": true')
             ->assertSeeText('"access_token": "1|exempleDeTokenSanctum"')
+            ->assertSeeText('Scenarios et role du frontend')
+            ->assertSeeText('Scenario 6 - Evaluation de la lecture')
             ->assertSeeText('Exemples Flutter')
             ->assertSeeText('Copier la doc en .md')
             ->assertSee('# Documentation API')

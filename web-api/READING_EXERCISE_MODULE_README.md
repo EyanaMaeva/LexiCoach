@@ -1,0 +1,429 @@
+# Module Reading Exercise
+
+Ce document explique le module backend pour l exercice de lecture avec speech-to-text et text-to-speech.
+
+Le code reste volontairement simple pour une etudiante:
+
+- Flutter affiche le texte a lire
+- Flutter utilise `flutter_tts` pour faire lire le texte par le telephone
+- Flutter utilise `speech_to_text` pour transformer la voix de l utilisateur en texte
+- Laravel recoit le texte reconnu, le compare avec le texte officiel, puis retourne un score et un feedback
+
+Important: le backend ne transforme pas l audio en texte dans cette version MVP. Le telephone fait deja cette partie.
+
+## Objectif
+
+Quand l utilisateur ouvre Reading Practice:
+
+1. L application recupere un exercice depuis le backend.
+2. Elle affiche le texte a lire.
+3. Le bouton Listen utilise le text-to-speech cote Flutter.
+4. Le bouton micro utilise le speech-to-text cote Flutter.
+5. Flutter envoie le transcript au backend.
+6. Laravel compare le transcript avec le texte attendu.
+7. Laravel retourne les mots corrects, manquants, incorrects ou en trop.
+
+## Scenarios de la fonctionnalite
+
+Cette partie sert a comprendre le parcours complet avant de coder le frontend.
+
+### Scenario 1 - Ouvrir Reading Practice
+
+L utilisatrice clique sur `Practice Exercises`, puis choisit `Reading`.
+
+Ce que le frontend doit faire:
+
+1. Verifier que l utilisatrice est connectee.
+2. Recuperer le token sauvegarde apres login ou register.
+3. Appeler l API pour charger les exercices:
+
+```http
+GET /api/reading-exercises
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+4. Afficher un loader pendant le chargement.
+5. Recuperer la liste dans `data.exercises`.
+6. Afficher le premier exercice ou laisser l utilisatrice choisir un exercice.
+
+Ce que le frontend doit garder en memoire:
+
+- `exercise.id`: utile pour appeler l evaluation
+- `exercise.text`: le texte que l utilisatrice doit lire
+- `exercise.language`: utile pour choisir la langue du TTS et du STT
+- `exercise.level`: utile pour afficher le niveau
+
+### Scenario 2 - Afficher le texte a lire
+
+Une fois l exercice charge, l application affiche le texte officiel.
+
+Exemple:
+
+```text
+The children visited the beautiful museum yesterday.
+```
+
+Ce que le frontend doit faire:
+
+1. Afficher `exercise.text` clairement.
+2. Ne pas modifier le texte avant de l afficher.
+3. Prevoir un bouton `Listen`.
+4. Prevoir un bouton micro.
+5. Prevoir une zone `You said` pour afficher le transcript reconnu.
+
+Important: le texte officiel vient du backend. Le frontend ne doit pas inventer le texte lui-meme.
+
+### Scenario 3 - Ecouter la bonne prononciation
+
+L utilisatrice appuie sur `Listen`.
+
+Ce que le frontend doit faire:
+
+1. Utiliser le package `flutter_tts`.
+2. Utiliser `exercise.language`, par exemple `en-US`.
+3. Lire `exercise.text`.
+4. Desactiver temporairement le bouton pendant la lecture si necessaire.
+5. Ajouter plus tard une option `Slow` pour lire plus lentement.
+
+Exemple d intention cote Flutter:
+
+```dart
+await flutterTts.setLanguage(exercise.language);
+await flutterTts.setSpeechRate(0.45);
+await flutterTts.speak(exercise.text);
+```
+
+Il n y a pas d appel backend pour cette partie dans le MVP.
+
+### Scenario 4 - Parler avec le micro
+
+L utilisatrice appuie sur le bouton micro et lit la phrase a voix haute.
+
+Ce que le frontend doit faire:
+
+1. Demander la permission microphone.
+2. Utiliser le package `speech_to_text`.
+3. Utiliser `exercise.language` pour la reconnaissance vocale.
+4. Afficher un etat `Listening...` pendant que le micro ecoute.
+5. Afficher le texte reconnu dans la zone `You said`.
+6. Garder le transcript final en memoire.
+
+Exemple:
+
+```text
+You said:
+The children visited beautiful museum yesterday.
+```
+
+Il n y a pas d upload audio dans cette version. Le frontend enverra seulement le transcript au backend.
+
+### Scenario 5 - Evaluer la lecture
+
+Quand le transcript existe, l utilisatrice appuie sur `Check` ou l application lance l evaluation automatiquement.
+
+Ce que le frontend doit envoyer:
+
+```http
+POST /api/reading-exercises/{id}/evaluate
+Authorization: Bearer {access_token}
+Accept: application/json
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+    "transcript": "The children visited beautiful museum yesterday."
+}
+```
+
+Important: le frontend ne doit pas envoyer `expected_text`.
+
+Pourquoi ?
+
+Parce que le backend connait deja le texte officiel grace a `exercise.id`. Le backend est la source de verite.
+
+Ce que le frontend doit lire dans la reponse:
+
+- `data.result.score`: le score en pourcentage
+- `data.result.status`: le niveau du resultat
+- `data.result.is_correct`: vrai ou faux
+- `data.result.words`: la comparaison mot par mot
+- `data.result.feedback.title`: le titre du feedback
+- `data.result.feedback.message`: le message a afficher
+
+### Scenario 6 - Afficher le resultat
+
+Apres l evaluation, l application affiche le score et le feedback.
+
+Si la lecture est correcte:
+
+```text
+Excellent!
+100%
+You read the sentence correctly.
+```
+
+Si des mots manquent:
+
+```text
+Good job!
+86%
+You read most of the sentence correctly. Try again and focus on the highlighted words.
+```
+
+Ce que le frontend doit faire avec `words`:
+
+- afficher les mots `correct` normalement ou en vert doux
+- afficher les mots `missing` comme manquants
+- afficher les mots `incorrect` avec une indication claire
+- afficher les mots `extra` comme mots en trop
+
+Exemple simple:
+
+```text
+The       correct
+children  correct
+visited   correct
+the       missing
+beautiful correct
+```
+
+### Scenario 7 - Reessayer
+
+Si le score n est pas parfait, l utilisatrice peut reessayer.
+
+Ce que le frontend doit faire:
+
+1. Garder le meme `exercise.id`.
+2. Effacer l ancien transcript.
+3. Remettre le bouton micro disponible.
+4. Laisser l utilisatrice ecouter encore une fois avec `Listen`.
+5. Envoyer le nouveau transcript au meme endpoint `evaluate`.
+
+Cette logique permet un parcours proche de Duolingo:
+
+```text
+Listen -> Speak -> Check -> Feedback -> Try again
+```
+
+## Routes disponibles
+
+Base URL locale:
+
+```text
+http://localhost:8000/api
+```
+
+Toutes les routes de ce module demandent un token Sanctum:
+
+```http
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+### Liste des exercices
+
+```http
+GET /api/reading-exercises
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Exercices de lecture recuperes.",
+    "data": {
+        "exercises": [
+            {
+                "id": 1,
+                "title": "Museum visit",
+                "text": "The children visited the beautiful museum yesterday.",
+                "language": "en-US",
+                "level": "beginner"
+            }
+        ]
+    }
+}
+```
+
+### Detail d un exercice
+
+```http
+GET /api/reading-exercises/1
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Exercice de lecture recupere.",
+    "data": {
+        "exercise": {
+            "id": 1,
+            "title": "Museum visit",
+            "text": "The children visited the beautiful museum yesterday.",
+            "language": "en-US",
+            "level": "beginner"
+        }
+    }
+}
+```
+
+### Evaluer la lecture
+
+```http
+POST /api/reading-exercises/1/evaluate
+```
+
+Body:
+
+```json
+{
+    "transcript": "The children visited beautiful museum yesterday."
+}
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Lecture evaluee.",
+    "data": {
+        "exercise": {
+            "id": 1,
+            "title": "Museum visit",
+            "text": "The children visited the beautiful museum yesterday.",
+            "language": "en-US",
+            "level": "beginner"
+        },
+        "result": {
+            "score": 86,
+            "status": "good",
+            "is_correct": false,
+            "transcript": "The children visited beautiful museum yesterday.",
+            "words": [
+                {
+                    "expected": "The",
+                    "actual": "The",
+                    "status": "correct"
+                },
+                {
+                    "expected": "children",
+                    "actual": "children",
+                    "status": "correct"
+                },
+                {
+                    "expected": "the",
+                    "actual": null,
+                    "status": "missing"
+                }
+            ],
+            "feedback": {
+                "title": "Good job!",
+                "message": "You read most of the sentence correctly. Try again and focus on the highlighted words."
+            }
+        }
+    }
+}
+```
+
+## Signification des statuts
+
+Dans `result.words`, chaque mot peut avoir un status:
+
+- `correct`: le mot attendu a ete reconnu correctement
+- `missing`: le mot attendu n a pas ete dit ou n a pas ete reconnu
+- `incorrect`: le mot reconnu est different du mot attendu
+- `extra`: l utilisateur a dit un mot en plus
+
+Dans `result.status`, le score global peut etre:
+
+- `excellent`: score superieur ou egal a 95
+- `good`: score superieur ou egal a 75
+- `needs_practice`: score inferieur a 75
+
+## Comment le score est calcule
+
+Le service `app/Services/ReadingEvaluator.php` fait 4 choses:
+
+1. Il met le texte attendu et le transcript en minuscules.
+2. Il retire la ponctuation simple.
+3. Il decoupe les phrases en mots.
+4. Il aligne les mots pour detecter les mots corrects, manquants, incorrects ou en trop.
+
+Formule simplifiee:
+
+```text
+score = 100 - pourcentage d erreurs
+```
+
+Exemple:
+
+```text
+Expected:
+The little boy is playing in the garden.
+
+Transcript:
+The little boy playing in garden.
+```
+
+Le backend peut detecter que `is` et `the` sont manquants.
+
+## Fichiers importants
+
+```text
+app/Http/Controllers/Api/ReadingExerciseController.php
+app/Http/Requests/EvaluateReadingExerciseRequest.php
+app/Models/ReadingExercise.php
+app/Services/ReadingEvaluator.php
+database/migrations/2026_09_02_000000_create_reading_exercises_table.php
+database/factories/ReadingExerciseFactory.php
+tests/Feature/ReadingExerciseApiTest.php
+```
+
+## Donnees de demo
+
+Le seeder ajoute deux exercices:
+
+```text
+The children visited the beautiful museum yesterday.
+The little boy is playing in the garden.
+```
+
+Pour les creer en base:
+
+```bash
+php artisan migrate --seed
+```
+
+## Packages Flutter conseilles
+
+Cote Flutter:
+
+```bash
+flutter pub add flutter_tts speech_to_text
+```
+
+`flutter_tts` sert au bouton Listen.
+
+`speech_to_text` sert au bouton micro.
+
+Le backend attend seulement le transcript:
+
+```dart
+body: jsonEncode({
+  'transcript': recognizedText,
+});
+```
+
+## Limite du MVP
+
+Cette version ne mesure pas parfaitement la prononciation. Elle mesure si le moteur speech-to-text a compris la phrase.
+
+C est suffisant pour une premiere version pedagogique. Pour une vraie analyse de prononciation, il faudra plus tard utiliser un moteur specialise capable d analyser l audio ou les phonemes.

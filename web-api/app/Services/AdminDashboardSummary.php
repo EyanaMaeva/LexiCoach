@@ -5,7 +5,11 @@ namespace App\Services;
 use App\Models\LearningMode;
 use App\Models\ReadingExercise;
 use App\Models\ReadingExerciseAttempt;
+use App\Models\SmartAbstractAttempt;
+use App\Models\SmartAbstractExercise;
 use App\Models\User;
+use App\Models\WritingExercise;
+use App\Models\WritingExerciseAttempt;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboardSummary
@@ -15,7 +19,9 @@ class AdminDashboardSummary
      */
     public function get(): array
     {
-        $totalAttempts = ReadingExerciseAttempt::query()->count();
+        $totalReadingAttempts = ReadingExerciseAttempt::query()->count();
+        $totalWritingAttempts = WritingExerciseAttempt::query()->count();
+        $totalSmartAbstractAttempts = SmartAbstractAttempt::query()->count();
 
         return [
             'users' => [
@@ -33,12 +39,22 @@ class AdminDashboardSummary
             'learning' => [
                 'modes' => LearningMode::query()->where('is_active', true)->count(),
                 'reading_exercises' => ReadingExercise::query()->count(),
-                'reading_attempts' => $totalAttempts,
-                'average_reading_score' => $totalAttempts > 0
+                'reading_attempts' => $totalReadingAttempts,
+                'average_reading_score' => $totalReadingAttempts > 0
                     ? (int) round((float) ReadingExerciseAttempt::query()->avg('score'))
                     : 0,
-                'best_reading_score' => $totalAttempts > 0
+                'best_reading_score' => $totalReadingAttempts > 0
                     ? (int) ReadingExerciseAttempt::query()->max('score')
+                    : 0,
+                'writing_exercises' => WritingExercise::query()->count(),
+                'writing_attempts' => $totalWritingAttempts,
+                'average_writing_score' => $totalWritingAttempts > 0
+                    ? (int) round((float) WritingExerciseAttempt::query()->avg('score'))
+                    : 0,
+                'smart_abstract_exercises' => SmartAbstractExercise::query()->count(),
+                'smart_abstract_attempts' => $totalSmartAbstractAttempts,
+                'average_smart_abstract_score' => $totalSmartAbstractAttempts > 0
+                    ? (int) round((float) SmartAbstractAttempt::query()->avg('score'))
                     : 0,
             ],
             'tutor_view' => [

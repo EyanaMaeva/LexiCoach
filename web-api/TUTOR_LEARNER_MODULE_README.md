@@ -39,8 +39,8 @@ Le tutor peut:
 
 - entrer le code donne par un learner;
 - voir la liste de ses learners associes;
-- voir la progression reading d un learner associe;
-- voir les tentatives reading d un learner associe.
+- voir la progression globale d un learner associe;
+- voir les tentatives reading, writing et smart abstract d un learner associe.
 
 Le tutor ne peut pas voir un learner qui n est pas associe a lui.
 
@@ -284,7 +284,7 @@ Reponse:
 }
 ```
 
-Pour le moment, `reading` contient les vraies donnees. Les autres modes sont retournes avec des statistiques a zero jusqu a leur implementation.
+Les modes `reading`, `writing` et `smart-abstract` contiennent maintenant les vraies donnees de progression. Les autres modes restent a zero jusqu a leur implementation.
 
 ### Associer un learner
 
@@ -460,7 +460,7 @@ Reponse:
     "attempts": [
       {
         "id": 5,
-        "reading_exercise": {
+        "exercise": {
           "id": 1,
           "title": "Garden sentence",
           "text": "The little boy is playing in the garden.",
@@ -480,6 +480,22 @@ Reponse:
   }
 }
 ```
+
+### Voir les tentatives writing d un learner
+
+```http
+GET /api/tutor/learners/{learner}/writing-attempts
+```
+
+Cette route retourne les textes ecrits par le learner, le score IA, le texte corrige, les erreurs et les suggestions.
+
+### Voir les tentatives smart abstract d un learner
+
+```http
+GET /api/tutor/learners/{learner}/smart-abstract-attempts
+```
+
+Cette route retourne les resumes ecrits par le learner, le score IA, le resume ameliore, les idees manquantes et les points forts.
 
 ## Scenarios cote frontend
 
@@ -513,12 +529,14 @@ Si le backend retourne `422`, le code est invalide, expire ou deja utilise.
 ### Scenario 3 - Le tutor consulte le tableau de bord
 
 1. Flutter appelle `GET /api/tutor/dashboard`.
-2. Flutter affiche `total_learners`, `active_learners` et la moyenne reading.
+2. Flutter affiche `total_learners`, `active_learners` et les moyennes reading, writing et smart abstract.
 3. Flutter affiche les learners a surveiller avec `learners_needing_attention`.
 4. Flutter appelle `GET /api/tutor/learners` pour afficher la liste detaillee.
 5. Le tutor clique sur un learner.
 6. Flutter appelle `GET /api/tutor/learners/{learner}/progress`.
-7. Flutter appelle `GET /api/tutor/learners/{learner}/reading-attempts` pour afficher l historique.
+7. Flutter appelle `GET /api/tutor/learners/{learner}/reading-attempts` pour afficher l historique reading.
+8. Flutter appelle `GET /api/tutor/learners/{learner}/writing-attempts` pour afficher l historique writing.
+9. Flutter appelle `GET /api/tutor/learners/{learner}/smart-abstract-attempts` pour afficher l historique smart abstract.
 
 Si la liste est vide, Flutter doit afficher un etat vide avec un bouton pour associer un learner.
 

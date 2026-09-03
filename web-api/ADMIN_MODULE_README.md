@@ -54,6 +54,12 @@ Cette route retourne:
 - le nombre de tentatives reading;
 - la moyenne reading globale;
 - le meilleur score reading;
+- le nombre d exercices writing;
+- le nombre de tentatives writing;
+- la moyenne writing globale;
+- le nombre d exercices smart abstract;
+- le nombre de tentatives smart abstract;
+- la moyenne smart abstract globale;
 - le nombre d associations tutor/learner;
 - les dernieres tentatives.
 
@@ -77,7 +83,13 @@ Exemple de reponse:
         "reading_exercises": 12,
         "reading_attempts": 80,
         "average_reading_score": 74,
-        "best_reading_score": 100
+        "best_reading_score": 100,
+        "writing_exercises": 6,
+        "writing_attempts": 32,
+        "average_writing_score": 78,
+        "smart_abstract_exercises": 5,
+        "smart_abstract_attempts": 18,
+        "average_smart_abstract_score": 81
       },
       "tutor_view": {
         "linked_pairs": 10,

@@ -58,6 +58,22 @@ class LearningMode extends Model
     }
 
     /**
+     * @return HasMany<WritingExercise, $this>
+     */
+    public function writingExercises(): HasMany
+    {
+        return $this->hasMany(WritingExercise::class);
+    }
+
+    /**
+     * @return HasMany<SmartAbstractExercise, $this>
+     */
+    public function smartAbstractExercises(): HasMany
+    {
+        return $this->hasMany(SmartAbstractExercise::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

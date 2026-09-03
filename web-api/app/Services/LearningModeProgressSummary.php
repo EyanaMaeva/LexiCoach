@@ -9,6 +9,8 @@ class LearningModeProgressSummary
 {
     public function __construct(
         private readonly ReadingProgressSummary $readingProgressSummary,
+        private readonly WritingProgressSummary $writingProgressSummary,
+        private readonly SmartAbstractProgressSummary $smartAbstractProgressSummary,
     ) {}
 
     /**
@@ -21,9 +23,12 @@ class LearningModeProgressSummary
         foreach ($this->activeModes() as $mode) {
             $progress[$mode->slug] = [
                 'learning_mode' => $this->formatMode($mode),
-                'summary' => $mode->slug === LearningMode::SLUG_READING
-                    ? $this->readingProgressSummary->forUser($user)
-                    : $this->readingProgressSummary->empty(),
+                'summary' => match ($mode->slug) {
+                    LearningMode::SLUG_READING => $this->readingProgressSummary->forUser($user),
+                    LearningMode::SLUG_WRITING => $this->writingProgressSummary->forUser($user),
+                    LearningMode::SLUG_SMART_ABSTRACT => $this->smartAbstractProgressSummary->forUser($user),
+                    default => $this->readingProgressSummary->empty(),
+                },
             ];
         }
 

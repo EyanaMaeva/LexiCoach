@@ -37,6 +37,8 @@ class ApiDocumentationController extends Controller
                         'Acceder a son profil.',
                         'Voir les exercices de lecture.',
                         'Envoyer un transcript pour obtenir une evaluation et un score.',
+                        'Faire les exercices writing avec correction IA.',
+                        'Faire les exercices smart abstract avec evaluation IA.',
                         'Generer un code temporaire pour etre associe a un tutor.',
                     ],
                 ],
@@ -413,7 +415,7 @@ class ApiDocumentationController extends Controller
                 [
                     'name' => 'Learning modes',
                     'slug' => 'learning-modes',
-                    'description' => 'Module pour lister les modes disponibles dans l application et charger les exercices lies au mode reading.',
+                    'description' => 'Module pour lister les modes disponibles dans l application et charger les exercices lies a reading, writing ou smart abstract.',
                     'endpoints' => [
                         [
                             'name' => 'Liste des modes',
@@ -490,11 +492,11 @@ class ApiDocumentationController extends Controller
                             ],
                         ],
                         [
-                            'name' => 'Exercices du mode reading',
+                            'name' => 'Exercices d un mode',
                             'method' => 'GET',
-                            'path' => '/api/learning-modes/reading/exercises',
+                            'path' => '/api/learning-modes/{slug}/exercises',
                             'protected' => true,
-                            'description' => 'Retourne les exercices actifs lies au learning mode reading.',
+                            'description' => 'Retourne les exercices actifs lies au learning mode. Les slugs actuellement operationnels sont reading, writing et smart-abstract.',
                             'headers' => [
                                 'Accept' => 'application/json',
                                 'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
@@ -506,7 +508,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercices du mode reading recuperes.',
+                                        'message' => 'Exercices du mode d apprentissage recuperes.',
                                         'data' => [
                                             'learning_mode' => [
                                                 'id' => 1,
@@ -524,6 +526,254 @@ class ApiDocumentationController extends Controller
                                                     'language' => 'en-US',
                                                     'level' => 'beginner',
                                                 ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'Writing Assistant avec IA',
+                    'slug' => 'writing-assistant',
+                    'description' => 'Module learner pour recuperer des sujets writing, envoyer la reponse de l apprenante, appeler Gemini cote backend, sauvegarder la tentative et retourner score plus feedback.',
+                    'endpoints' => [
+                        [
+                            'name' => 'Liste des exercices writing',
+                            'method' => 'GET',
+                            'path' => '/api/writing-exercises',
+                            'protected' => true,
+                            'description' => 'Retourne les exercices writing actifs. Flutter affiche prompt, instructions, langue, niveau et nombre minimum de mots.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Exercices writing recuperes.',
+                                        'data' => [
+                                            'exercises' => [
+                                                [
+                                                    'id' => 1,
+                                                    'title' => 'My school day',
+                                                    'prompt' => 'Write five sentences about your school day.',
+                                                    'instructions' => 'Use simple sentences.',
+                                                    'language' => 'en-US',
+                                                    'level' => 'beginner',
+                                                    'min_words' => 25,
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Evaluer une reponse writing',
+                            'method' => 'POST',
+                            'path' => '/api/writing-exercises/{writingExercise}/evaluate',
+                            'protected' => true,
+                            'description' => 'Envoie la reponse de l apprenante a l IA via Laravel. Le backend sauvegarde la tentative et retourne une correction exploitable par Flutter.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => [
+                                'answer' => 'Today I went to school and learned a new English word with my teacher.',
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Texte writing evalue.',
+                                        'data' => [
+                                            'result' => [
+                                                'score' => 82,
+                                                'status' => 'good',
+                                                'answer' => 'Today I went to school...',
+                                                'corrected_text' => 'Today I went to school...',
+                                                'mistakes' => [],
+                                                'suggestions' => ['Add one clear example.'],
+                                                'feedback' => [
+                                                    'title' => 'Good work!',
+                                                    'message' => 'Your answer is understandable. Improve details and punctuation.',
+                                                ],
+                                            ],
+                                            'attempt' => [
+                                                'id' => 15,
+                                                'score' => 82,
+                                                'status' => 'good',
+                                                'created_at' => '2026-09-03T10:00:00.000000Z',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                                [
+                                    'status' => 503,
+                                    'title' => 'Service IA indisponible',
+                                    'body' => [
+                                        'success' => false,
+                                        'message' => 'Service IA indisponible.',
+                                        'errors' => [
+                                            'ai' => ['GEMINI_API_KEY is missing.'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Progression writing',
+                            'method' => 'GET',
+                            'path' => '/api/me/writing-progress',
+                            'protected' => true,
+                            'description' => 'Retourne total_attempts, completed_exercises, average_score, best_score et latest_attempt pour writing.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Progression writing recuperee.',
+                                        'data' => [
+                                            'progress' => [
+                                                'total_attempts' => 3,
+                                                'completed_exercises' => 2,
+                                                'average_score' => 78,
+                                                'best_score' => 91,
+                                                'latest_attempt' => null,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'name' => 'Smart Abstract avec IA',
+                    'slug' => 'smart-abstract',
+                    'description' => 'Module learner pour recuperer un texte source, envoyer un resume, appeler Gemini cote backend, sauvegarder la tentative et retourner un feedback structure.',
+                    'endpoints' => [
+                        [
+                            'name' => 'Liste des exercices smart abstract',
+                            'method' => 'GET',
+                            'path' => '/api/smart-abstract-exercises',
+                            'protected' => true,
+                            'description' => 'Retourne les textes a resumer avec instructions, min_words et max_words.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Exercices smart abstract recuperes.',
+                                        'data' => [
+                                            'exercises' => [
+                                                [
+                                                    'id' => 1,
+                                                    'title' => 'Library paragraph',
+                                                    'source_text' => 'Every Wednesday, the class visits the library.',
+                                                    'instructions' => 'Write a short summary with the main idea.',
+                                                    'language' => 'en-US',
+                                                    'level' => 'beginner',
+                                                    'min_words' => 20,
+                                                    'max_words' => 60,
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Evaluer un resume',
+                            'method' => 'POST',
+                            'path' => '/api/smart-abstract-exercises/{smartAbstractExercise}/evaluate',
+                            'protected' => true,
+                            'description' => 'Envoie le resume de l apprenante a l IA via Laravel. Le backend compare avec le texte source, sauvegarde la tentative et retourne score, idees manquantes et feedback.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => [
+                                'summary' => 'The class visits the library and the teacher helps learners choose books.',
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Resume intelligent evalue.',
+                                        'data' => [
+                                            'result' => [
+                                                'score' => 84,
+                                                'status' => 'good',
+                                                'summary' => 'The class visits the library...',
+                                                'improved_summary' => 'The class visits the library...',
+                                                'missing_ideas' => [],
+                                                'strengths' => ['The summary is readable.'],
+                                                'feedback' => [
+                                                    'title' => 'Good summary!',
+                                                    'message' => 'The summary keeps the main idea. Make it even more precise.',
+                                                ],
+                                            ],
+                                            'attempt' => [
+                                                'id' => 16,
+                                                'score' => 84,
+                                                'status' => 'good',
+                                                'created_at' => '2026-09-03T10:00:00.000000Z',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Progression smart abstract',
+                            'method' => 'GET',
+                            'path' => '/api/me/smart-abstract-progress',
+                            'protected' => true,
+                            'description' => 'Retourne total_attempts, completed_exercises, average_score, best_score et latest_attempt pour smart abstract.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => null,
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Progression smart abstract recuperee.',
+                                        'data' => [
+                                            'progress' => [
+                                                'total_attempts' => 2,
+                                                'completed_exercises' => 1,
+                                                'average_score' => 81,
+                                                'best_score' => 90,
+                                                'latest_attempt' => null,
                                             ],
                                         ],
                                     ],
@@ -638,7 +888,7 @@ class ApiDocumentationController extends Controller
                             'method' => 'GET',
                             'path' => '/api/me/progress',
                             'protected' => true,
-                            'description' => 'Retourne la progression du learner connecte pour chaque mode actif. Pour les modes pas encore implementes, les statistiques restent a zero.',
+                            'description' => 'Retourne la progression du learner connecte pour chaque mode actif. Reading, writing et smart abstract ont de vraies statistiques; les autres modes restent a zero.',
                             'headers' => [
                                 'Accept' => 'application/json',
                                 'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
@@ -841,7 +1091,7 @@ class ApiDocumentationController extends Controller
                             'method' => 'GET',
                             'path' => '/api/tutor/dashboard',
                             'protected' => true,
-                            'description' => 'Retourne un resume global des learners associes au tutor: nombre de learners, moyenne reading, dernieres tentatives et learners a surveiller.',
+                            'description' => 'Retourne un resume global des learners associes au tutor: nombre de learners, moyennes reading/writing/smart abstract, dernieres tentatives et learners a surveiller.',
                             'headers' => [
                                 'Accept' => 'application/json',
                                 'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
@@ -979,7 +1229,7 @@ class ApiDocumentationController extends Controller
                             'method' => 'GET',
                             'path' => '/api/tutor/learners/{learner}/progress',
                             'protected' => true,
-                            'description' => 'Retourne la progression par learning mode d un learner associe au tutor connecte. Reading contient les vrais scores. Les autres modes restent a zero tant qu ils ne sont pas implementes.',
+                            'description' => 'Retourne la progression par learning mode d un learner associe au tutor connecte. Reading, writing et smart abstract contiennent les vrais scores.',
                             'headers' => [
                                 'Accept' => 'application/json',
                                 'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
@@ -1135,6 +1385,12 @@ class ApiDocumentationController extends Controller
                                                     'reading_attempts' => 80,
                                                     'average_reading_score' => 74,
                                                     'best_reading_score' => 100,
+                                                    'writing_exercises' => 6,
+                                                    'writing_attempts' => 32,
+                                                    'average_writing_score' => 78,
+                                                    'smart_abstract_exercises' => 5,
+                                                    'smart_abstract_attempts' => 18,
+                                                    'average_smart_abstract_score' => 81,
                                                 ],
                                                 'tutor_view' => [
                                                     'linked_pairs' => 10,
@@ -1266,15 +1522,22 @@ class ApiDocumentationController extends Controller
                 'Ne montrer les ecrans Reading Practice qu aux utilisateurs avec role learner.',
                 'Appeler GET /api/learning-modes pour afficher les modes depuis le backend.',
                 'Quand le mode reading est choisi, appeler GET /api/learning-modes/reading/exercises.',
+                'Quand le mode writing est choisi, appeler GET /api/learning-modes/writing/exercises.',
+                'Quand le mode smart abstract est choisi, appeler GET /api/learning-modes/smart-abstract/exercises.',
                 'Pour Reading Practice, utiliser flutter_tts pour lire le text et speech_to_text pour obtenir le transcript.',
                 'Envoyer seulement le transcript au backend. Le backend compare avec le text officiel de l exercice et sauvegarde la tentative.',
+                'Pour Writing Assistant, envoyer seulement answer au backend avec POST /api/writing-exercises/{id}/evaluate.',
+                'Pour Smart Abstract, envoyer seulement summary au backend avec POST /api/smart-abstract-exercises/{id}/evaluate.',
+                'Ne jamais appeler Gemini directement depuis Flutter. Le backend garde la cle API et parle a Gemini.',
                 'Appeler GET /api/me/reading-progress pour afficher la progression du learner.',
+                'Appeler GET /api/me/writing-progress et GET /api/me/smart-abstract-progress pour les nouveaux modes IA.',
                 'Pour associer un tutor, le learner genere un code avec POST /api/me/association-code.',
                 'Le learner peut annuler son code avec DELETE /api/me/association-code ou le regenerer avec POST /api/me/association-code/regenerate.',
                 'Le tutor saisit ce code et appelle POST /api/tutor/learners/link.',
                 'Le tutor charge son dashboard avec GET /api/tutor/dashboard.',
                 'Le tutor charge ensuite ses learners avec GET /api/tutor/learners.',
                 'Le tutor consulte la progression avec GET /api/tutor/learners/{learner}/progress et les tentatives avec GET /api/tutor/learners/{learner}/reading-attempts.',
+                'Le tutor peut aussi consulter GET /api/tutor/learners/{learner}/writing-attempts et GET /api/tutor/learners/{learner}/smart-abstract-attempts.',
                 'Le tutor peut detacher un learner avec DELETE /api/tutor/learners/{learner}.',
                 'Pour l admin web, ouvrir /admin/login, se connecter avec un compte admin, puis la page redirige vers /admin/dashboard.',
                 'L admin peut changer un role avec PATCH /api/admin/users/{user}/role.',
@@ -1442,7 +1705,7 @@ class ApiDocumentationController extends Controller
                         'Appeler GET /api/me/progress avec le Bearer token pour le dashboard global.',
                         'Lire data.progress.reading.summary.total_attempts pour les essais de lecture.',
                         'Lire data.progress.reading.summary.average_score pour la moyenne de lecture.',
-                        'Afficher les modes non encore implementes avec des statistiques a zero.',
+                        'Afficher reading, writing et smart abstract avec leurs vraies statistiques, puis les autres modes avec des statistiques a zero.',
                         'Appeler GET /api/me/reading-attempts si on veut afficher l historique complet.',
                     ],
                     'api_flow' => [
@@ -1512,18 +1775,22 @@ class ApiDocumentationController extends Controller
                 [
                     'title' => 'Scenario 11 - Tutor consulte la progression du learner',
                     'goal' => 'Afficher au tutor les scores et tentatives de lecture d un learner associe.',
-                    'user_story' => 'Le tutor ouvre son espace, choisit un learner associe, puis voit sa progression reading et son historique.',
+                    'user_story' => 'Le tutor ouvre son espace, choisit un learner associe, puis voit sa progression reading, writing, smart abstract et son historique.',
                     'frontend_tasks' => [
                         'Appeler GET /api/tutor/learners pour afficher les learners associes.',
                         'Quand le tutor clique sur un learner, garder learner.id.',
                         'Appeler GET /api/tutor/learners/{learner}/progress pour afficher le resume.',
-                        'Appeler GET /api/tutor/learners/{learner}/reading-attempts pour afficher les details.',
+                        'Appeler GET /api/tutor/learners/{learner}/reading-attempts pour afficher les details reading.',
+                        'Appeler GET /api/tutor/learners/{learner}/writing-attempts pour afficher les details writing.',
+                        'Appeler GET /api/tutor/learners/{learner}/smart-abstract-attempts pour afficher les details smart abstract.',
                         'Afficher total_attempts, average_score, best_score et latest_attempt si disponible.',
                     ],
                     'api_flow' => [
                         'GET /api/tutor/learners',
                         'GET /api/tutor/learners/{learner}/progress',
                         'GET /api/tutor/learners/{learner}/reading-attempts',
+                        'GET /api/tutor/learners/{learner}/writing-attempts',
+                        'GET /api/tutor/learners/{learner}/smart-abstract-attempts',
                         'Le backend verifie que le learner est bien associe au tutor connecte.',
                     ],
                     'display_rules' => [
@@ -1535,20 +1802,22 @@ class ApiDocumentationController extends Controller
                 [
                     'title' => 'Scenario 12 - Tutor voit son dashboard global',
                     'goal' => 'Donner au tutor une vue rapide sur tous ses learners associes.',
-                    'user_story' => 'Le tutor ouvre son espace et voit le nombre de learners, la moyenne reading, les dernieres tentatives et les learners a surveiller.',
+                    'user_story' => 'Le tutor ouvre son espace et voit le nombre de learners, les moyennes par module, les dernieres tentatives et les learners a surveiller.',
                     'frontend_tasks' => [
                         'Verifier que le user connecte a le role tutor.',
                         'Appeler GET /api/tutor/dashboard au chargement de l espace tutor.',
                         'Lire data.dashboard.total_learners pour afficher le nombre d apprenants.',
                         'Lire data.dashboard.reading.average_score pour afficher la moyenne reading.',
+                        'Lire data.dashboard.writing.average_score pour afficher la moyenne writing.',
+                        'Lire data.dashboard.smart_abstract.average_score pour afficher la moyenne smart abstract.',
                         'Lire data.dashboard.reading.latest_attempts pour afficher les dernieres activites.',
                         'Lire data.dashboard.reading.learners_needing_attention pour afficher les learners sans tentative ou avec une moyenne faible.',
                     ],
                     'api_flow' => [
                         'GET /api/tutor/dashboard',
                         'Le backend recupere uniquement les learners associes au tutor connecte.',
-                        'Le backend calcule les statistiques reading globales.',
-                        'Le backend retourne aussi progress_by_mode avec reading reel et les autres modes a zero.',
+                        'Le backend calcule les statistiques globales reading, writing et smart abstract.',
+                        'Le backend retourne aussi progress_by_mode avec les vrais scores des modes implementes.',
                     ],
                     'display_rules' => [
                         'Si total_learners vaut 0, afficher un etat vide et proposer d associer un learner.',
@@ -1604,6 +1873,245 @@ class ApiDocumentationController extends Controller
                         'Si le compte connecte n est pas admin, afficher un message et ne pas charger les donnees admin.',
                         'Si un changement de role reussit, mettre a jour la ligne utilisateur et les statistiques.',
                         'Ne pas permettre a un admin de retirer son propre role admin.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 15 - Learner utilise Writing Assistant',
+                    'goal' => 'Permettre a l apprenante d ecrire un texte et de recevoir une correction IA sauvegardee.',
+                    'user_story' => 'L utilisatrice choisit Writing Assistant, lit le sujet, ecrit sa reponse, puis recoit un score et des conseils.',
+                    'frontend_tasks' => [
+                        'Appeler GET /api/learning-modes/writing/exercises ou GET /api/writing-exercises.',
+                        'Afficher title, prompt, instructions et min_words.',
+                        'Ajouter un champ texte confortable pour que l apprenante ecrive sa reponse.',
+                        'Bloquer le bouton Check si answer est vide ou trop court.',
+                        'Appeler POST /api/writing-exercises/{writingExercise}/evaluate avec answer.',
+                        'Afficher data.result.score, status, corrected_text, mistakes, suggestions et feedback.',
+                        'Appeler GET /api/me/writing-progress pour actualiser les statistiques.',
+                    ],
+                    'api_flow' => [
+                        'GET /api/writing-exercises',
+                        'POST /api/writing-exercises/{writingExercise}/evaluate',
+                        'Le backend recupere l exercice officiel.',
+                        'Le backend appelle Gemini si AI_PROVIDER vaut gemini.',
+                        'Le backend sauvegarde writing_exercise_attempts.',
+                        'Le backend retourne le resultat pret pour Flutter.',
+                    ],
+                    'display_rules' => [
+                        'Si status vaut good ou excellent, afficher une reussite calme.',
+                        'Si status vaut needs_practice, afficher les conseils sans culpabiliser.',
+                        'Si la reponse est 503, afficher que la correction IA est indisponible pour le moment.',
+                        'Ne pas exposer la cle Gemini dans Flutter.',
+                    ],
+                ],
+                [
+                    'title' => 'Scenario 16 - Learner utilise Smart Abstract',
+                    'goal' => 'Permettre a l apprenante de resumer un texte et de recevoir une evaluation IA.',
+                    'user_story' => 'L utilisatrice lit un paragraphe, ecrit un resume court, puis l app lui dit si les idees importantes sont presentes.',
+                    'frontend_tasks' => [
+                        'Appeler GET /api/learning-modes/smart-abstract/exercises ou GET /api/smart-abstract-exercises.',
+                        'Afficher source_text, instructions, min_words et max_words.',
+                        'Ajouter un champ texte pour le resume.',
+                        'Afficher un compteur de mots simple si possible.',
+                        'Appeler POST /api/smart-abstract-exercises/{smartAbstractExercise}/evaluate avec summary.',
+                        'Afficher data.result.score, improved_summary, missing_ideas, strengths et feedback.',
+                        'Appeler GET /api/me/smart-abstract-progress pour actualiser les statistiques.',
+                    ],
+                    'api_flow' => [
+                        'GET /api/smart-abstract-exercises',
+                        'POST /api/smart-abstract-exercises/{smartAbstractExercise}/evaluate',
+                        'Le backend garde le texte source officiel.',
+                        'Le backend appelle Gemini si AI_PROVIDER vaut gemini.',
+                        'Le backend sauvegarde smart_abstract_attempts.',
+                        'Le backend retourne le resultat structure pour Flutter.',
+                    ],
+                    'display_rules' => [
+                        'Afficher les idees manquantes comme des pistes de correction.',
+                        'Afficher improved_summary comme une proposition, pas comme une punition.',
+                        'Si la reponse est 503, permettre a l utilisatrice de reessayer plus tard.',
+                        'Ne jamais appeler Gemini depuis l app mobile.',
+                    ],
+                ],
+            ],
+            'real_cases' => [
+                [
+                    'title' => 'Une apprenante commence un exercice de lecture',
+                    'actor' => 'learner',
+                    'situation' => 'Marie ouvre Practice Exercises, choisit Reading, ecoute la phrase, lit a voix haute et recoit un score.',
+                    'frontend_actions' => [
+                        'Verifier que le compte connecte a le role learner.',
+                        'Afficher les modes depuis le backend.',
+                        'Charger les exercices du mode reading.',
+                        'Utiliser le TTS du telephone pour le bouton Listen.',
+                        'Utiliser le STT du telephone pour obtenir le transcript.',
+                        'Envoyer uniquement le transcript au backend.',
+                        'Afficher les mots corrects, manquants, incorrects ou en trop.',
+                    ],
+                    'routes' => [
+                        'GET /api/learning-modes',
+                        'GET /api/learning-modes/reading/exercises',
+                        'POST /api/reading-exercises/{readingExercise}/evaluate',
+                        'GET /api/me/reading-progress',
+                    ],
+                    'backend_guarantees' => [
+                        'Le texte officiel reste en base de donnees.',
+                        'La tentative est sauvegardee dans reading_exercise_attempts.',
+                        'La progression reading est mise a jour automatiquement.',
+                    ],
+                ],
+                [
+                    'title' => 'Une apprenante utilise Writing Assistant',
+                    'actor' => 'learner',
+                    'situation' => 'Marie ecrit quelques phrases en anglais et demande une correction douce avec IA.',
+                    'frontend_actions' => [
+                        'Charger les exercices writing.',
+                        'Afficher prompt, instructions et nombre minimum de mots.',
+                        'Garder le texte dans le champ si l API echoue.',
+                        'Envoyer answer au backend.',
+                        'Afficher score, corrected_text, mistakes, suggestions et feedback.',
+                    ],
+                    'routes' => [
+                        'GET /api/learning-modes/writing/exercises',
+                        'POST /api/writing-exercises/{writingExercise}/evaluate',
+                        'GET /api/me/writing-progress',
+                    ],
+                    'backend_guarantees' => [
+                        'La cle Gemini reste cote Laravel.',
+                        'Le backend appelle Gemini et normalise la reponse.',
+                        'La tentative est sauvegardee dans writing_exercise_attempts.',
+                    ],
+                ],
+                [
+                    'title' => 'Une apprenante resume un texte avec Smart Abstract',
+                    'actor' => 'learner',
+                    'situation' => 'Marie lit un paragraphe, ecrit un resume court et recoit les idees manquantes.',
+                    'frontend_actions' => [
+                        'Charger les exercices smart abstract.',
+                        'Afficher le texte source et les consignes.',
+                        'Afficher min_words et max_words.',
+                        'Envoyer summary au backend.',
+                        'Afficher improved_summary, missing_ideas, strengths et feedback.',
+                    ],
+                    'routes' => [
+                        'GET /api/learning-modes/smart-abstract/exercises',
+                        'POST /api/smart-abstract-exercises/{smartAbstractExercise}/evaluate',
+                        'GET /api/me/smart-abstract-progress',
+                    ],
+                    'backend_guarantees' => [
+                        'Le texte source officiel reste en base.',
+                        'Gemini evalue le resume cote serveur.',
+                        'La tentative est sauvegardee dans smart_abstract_attempts.',
+                    ],
+                ],
+                [
+                    'title' => 'Un learner veut etre suivi par un tutor',
+                    'actor' => 'learner + tutor',
+                    'situation' => 'Marie genere un code, le donne a son tutor, puis le tutor l associe a son compte.',
+                    'frontend_actions' => [
+                        'Le learner affiche ou genere son code actif.',
+                        'Le learner peut annuler ou regenerer le code.',
+                        'Le tutor saisit le code recu.',
+                        'Le frontend tutor recharge la liste des learners apres association.',
+                    ],
+                    'routes' => [
+                        'GET /api/me/association-code',
+                        'POST /api/me/association-code',
+                        'POST /api/me/association-code/regenerate',
+                        'DELETE /api/me/association-code',
+                        'POST /api/tutor/learners/link',
+                        'GET /api/tutor/learners',
+                    ],
+                    'backend_guarantees' => [
+                        'Un code expire apres 24h.',
+                        'Un code utilise ou annule ne peut plus etre reutilise.',
+                        'Le lien tutor/learner est stocke dans tutor_learners.',
+                    ],
+                ],
+                [
+                    'title' => 'Un tutor repere les learners a aider',
+                    'actor' => 'tutor',
+                    'situation' => 'Le tutor ouvre son dashboard et voit les apprenants sans tentative ou avec une moyenne faible.',
+                    'frontend_actions' => [
+                        'Charger le dashboard tutor au demarrage de l espace tutor.',
+                        'Afficher total_learners, active_learners et les moyennes par module.',
+                        'Afficher learners_needing_attention.',
+                        'Ouvrir la progression detaillee quand le tutor clique sur un learner.',
+                        'Afficher les historiques reading, writing et smart abstract.',
+                    ],
+                    'routes' => [
+                        'GET /api/tutor/dashboard',
+                        'GET /api/tutor/learners',
+                        'GET /api/tutor/learners/{learner}/progress',
+                        'GET /api/tutor/learners/{learner}/reading-attempts',
+                        'GET /api/tutor/learners/{learner}/writing-attempts',
+                        'GET /api/tutor/learners/{learner}/smart-abstract-attempts',
+                    ],
+                    'backend_guarantees' => [
+                        'Le tutor ne voit que ses learners associes.',
+                        'Une tentative reste liee au learner meme si le tutor le detache.',
+                        'La progression detaillee est filtree par association tutor/learner.',
+                    ],
+                ],
+                [
+                    'title' => 'Un admin surveille l application',
+                    'actor' => 'admin',
+                    'situation' => 'L admin ouvre son dashboard web pour suivre les comptes, les roles et l activite globale.',
+                    'frontend_actions' => [
+                        'Connecter l admin depuis /admin/login.',
+                        'Verifier que role vaut admin avant de charger /admin/dashboard.',
+                        'Afficher les statistiques users et learning.',
+                        'Lister et filtrer les utilisateurs.',
+                        'Changer un role utilisateur si necessaire.',
+                    ],
+                    'routes' => [
+                        'POST /api/auth/login',
+                        'GET /api/auth/me',
+                        'GET /api/admin/dashboard',
+                        'GET /api/admin/users',
+                        'PATCH /api/admin/users/{user}/role',
+                    ],
+                    'backend_guarantees' => [
+                        'Toutes les routes admin demandent le role admin.',
+                        'Un admin ne peut pas retirer son propre role admin.',
+                        'Le dashboard compte reading, writing et smart abstract.',
+                    ],
+                ],
+                [
+                    'title' => 'Gemini ne repond pas',
+                    'actor' => 'learner',
+                    'situation' => 'La cle est invalide, internet est coupe ou le modele Gemini est refuse.',
+                    'frontend_actions' => [
+                        'Afficher un message simple si la route retourne 503.',
+                        'Ne pas vider le champ texte de l apprenante.',
+                        'Proposer de reessayer plus tard.',
+                        'Ne jamais afficher les details techniques a l enfant.',
+                    ],
+                    'routes' => [
+                        'POST /api/writing-exercises/{writingExercise}/evaluate',
+                        'POST /api/smart-abstract-exercises/{smartAbstractExercise}/evaluate',
+                    ],
+                    'backend_guarantees' => [
+                        'L erreur IA est transformee en JSON propre.',
+                        'La cle Gemini n est jamais exposee au mobile.',
+                        'Les tests restent stables avec AI_PROVIDER=fake.',
+                    ],
+                ],
+                [
+                    'title' => 'Paiement a preparer plus tard',
+                    'actor' => 'learner + admin',
+                    'situation' => 'Certaines fonctionnalites pourraient devenir premium apres choix de l agregateur de paiement.',
+                    'frontend_actions' => [
+                        'Afficher clairement les modules gratuits et premium.',
+                        'Rediriger vers le paiement seulement si le backend dit que l acces est bloque.',
+                        'Ne jamais decider cote Flutter qu un utilisateur est premium sans validation backend.',
+                    ],
+                    'routes' => [
+                        'A definir apres choix du provider de paiement',
+                    ],
+                    'backend_guarantees' => [
+                        'Creer la session de paiement cote serveur.',
+                        'Recevoir les webhooks du provider.',
+                        'Sauvegarder le statut paiement.',
+                        'Bloquer ou debloquer les modules premium depuis Laravel.',
                     ],
                 ],
             ],
@@ -1882,6 +2390,44 @@ CODE,
 
             foreach ($guide['display_rules'] as $rule) {
                 $lines[] = '- '.$rule;
+            }
+
+            $lines[] = '';
+        }
+
+        $lines[] = '';
+        $lines[] = '## Cas reels importants';
+        $lines[] = '';
+        $lines[] = 'Ces cas montrent comment les fonctionnalites se comportent dans une vraie utilisation de LexiCoach.';
+        $lines[] = '';
+
+        foreach ($documentation['real_cases'] as $case) {
+            $lines[] = '### '.$case['title'];
+            $lines[] = '';
+            $lines[] = '- Acteur: `'.$case['actor'].'`';
+            $lines[] = '- Situation: '.$case['situation'];
+            $lines[] = '';
+            $lines[] = '#### Actions frontend';
+            $lines[] = '';
+
+            foreach ($case['frontend_actions'] as $action) {
+                $lines[] = '- '.$action;
+            }
+
+            $lines[] = '';
+            $lines[] = '#### Routes utilisees';
+            $lines[] = '';
+
+            foreach ($case['routes'] as $route) {
+                $lines[] = '- `'.$route.'`';
+            }
+
+            $lines[] = '';
+            $lines[] = '#### Garanties backend';
+            $lines[] = '';
+
+            foreach ($case['backend_guarantees'] as $guarantee) {
+                $lines[] = '- '.$guarantee;
             }
 
             $lines[] = '';

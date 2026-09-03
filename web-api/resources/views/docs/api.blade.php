@@ -394,6 +394,11 @@
             color: var(--rose-ink);
         }
 
+        .icon-box.amber {
+            background: var(--amber);
+            color: var(--amber-ink);
+        }
+
         .nav-dot {
             background: var(--mint);
             border: 1px solid var(--line);
@@ -628,6 +633,7 @@
             @endforeach
             <a href="#roles"><span class="nav-dot"></span>Roles utilisateur</a>
             <a href="#scenarios"><span class="nav-dot"></span>Scenarios frontend</a>
+            <a href="#real-cases"><span class="nav-dot"></span>Cas reels</a>
             <a href="#flutter"><span class="nav-dot"></span>Exemples Flutter</a>
         </nav>
 
@@ -777,6 +783,60 @@
                                     <ul>
                                         @foreach ($guide['display_rules'] as $rule)
                                             <li>{{ $rule }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+
+            <section id="real-cases">
+                <div class="section-heading">
+                    <span class="icon-box amber">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <h2>Cas reels importants</h2>
+                </div>
+                <p class="section-description">Ces cas montrent comment les fonctionnalites se comportent dans une vraie utilisation de LexiCoach.</p>
+
+                <div class="guide-grid">
+                    @foreach ($documentation['real_cases'] as $case)
+                        <article class="guide-card">
+                            <div class="guide-card-header">
+                                <span class="guide-tag">{{ $case['actor'] }}</span>
+                                <h3>{{ $case['title'] }}</h3>
+                                <p>{{ $case['situation'] }}</p>
+                            </div>
+
+                            <div class="guide-body">
+                                <div class="guide-list">
+                                    <h4>Actions frontend</h4>
+                                    <ul>
+                                        @foreach ($case['frontend_actions'] as $action)
+                                            <li>{{ $action }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+
+                                <div class="guide-list">
+                                    <h4>Routes utilisees</h4>
+                                    <ul>
+                                        @foreach ($case['routes'] as $route)
+                                            <li><code>{{ $route }}</code></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+
+                                <div class="guide-list">
+                                    <h4>Backend garantit</h4>
+                                    <ul>
+                                        @foreach ($case['backend_guarantees'] as $guarantee)
+                                            <li>{{ $guarantee }}</li>
                                         @endforeach
                                     </ul>
                                 </div>

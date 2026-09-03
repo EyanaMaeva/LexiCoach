@@ -55,7 +55,7 @@ word-splitting
 smart-abstract
 ```
 
-Pour l instant, seul `reading` est operationnel jusqu a l evaluation et la progression. Les autres modes sont prepares pour les prochains modules.
+Les modes `reading`, `writing` et `smart-abstract` sont maintenant operationnels jusqu a l evaluation et la progression. Les autres modes restent prepares pour les prochains modules.
 
 ### Scenario 1 - Ouvrir Reading Practice
 
@@ -607,9 +607,9 @@ Reponse:
 }
 ```
 
-Pour le moment, la vraie progression est calculee pour `reading`.
+La vraie progression est calculee pour `reading`, `writing` et `smart-abstract`.
 
-Les autres modes retournent des scores a zero parce qu ils ne sont pas encore implementes.
+Les modes restants retournent des scores a zero tant qu ils ne sont pas encore implementes.
 
 ## Signification des statuts
 

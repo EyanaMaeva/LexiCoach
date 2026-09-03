@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\LearningMode;
 use App\Models\ReadingExerciseAttempt;
+use App\Models\SmartAbstractAttempt;
 use App\Models\User;
+use App\Models\WritingExerciseAttempt;
 use Illuminate\Support\Collection;
 
 class TutorDashboardSummary
@@ -12,6 +14,8 @@ class TutorDashboardSummary
     public function __construct(
         private readonly LearningModeProgressSummary $learningModeProgressSummary,
         private readonly ReadingProgressSummary $readingProgressSummary,
+        private readonly WritingProgressSummary $writingProgressSummary,
+        private readonly SmartAbstractProgressSummary $smartAbstractProgressSummary,
     ) {}
 
     /**
@@ -28,6 +32,8 @@ class TutorDashboardSummary
             'total_learners' => $learners->count(),
             'active_learners' => $this->activeLearnersCount($learners),
             'reading' => $this->readingOverview($learners),
+            'writing' => $this->attemptOverview($learners, WritingExerciseAttempt::class, 'writingExercise'),
+            'smart_abstract' => $this->attemptOverview($learners, SmartAbstractAttempt::class, 'smartAbstractExercise'),
             'progress_by_mode' => $this->progressByMode($learners),
         ];
     }
@@ -41,10 +47,11 @@ class TutorDashboardSummary
             return 0;
         }
 
-        return ReadingExerciseAttempt::query()
-            ->whereIn('user_id', $learners->pluck('id')->all())
-            ->distinct('user_id')
-            ->count('user_id');
+        return $learners
+            ->filter(fn (User $learner): bool => $learner->readingExerciseAttempts()->exists()
+                || $learner->writingExerciseAttempts()->exists()
+                || $learner->smartAbstractAttempts()->exists())
+            ->count();
     }
 
     /**
@@ -145,7 +152,7 @@ class TutorDashboardSummary
                 'learning_mode' => $this->learningModeProgressSummary->formatMode($mode),
                 'summary' => $mode->slug === LearningMode::SLUG_READING
                     ? $this->aggregateReadingSummary($learners)
-                    : $this->emptyAggregateSummary(),
+                    : $this->aggregateAiSummary($learners, $mode->slug),
             ];
         }
 
@@ -178,6 +185,80 @@ class TutorDashboardSummary
             'average_score' => 0,
             'best_score' => 0,
             'latest_attempts' => [],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, User>  $learners
+     * @return array<string, mixed>
+     */
+    private function aggregateAiSummary(Collection $learners, string $slug): array
+    {
+        if ($slug === LearningMode::SLUG_WRITING) {
+            return $this->attemptOverview($learners, WritingExerciseAttempt::class, 'writingExercise');
+        }
+
+        if ($slug === LearningMode::SLUG_SMART_ABSTRACT) {
+            return $this->attemptOverview($learners, SmartAbstractAttempt::class, 'smartAbstractExercise');
+        }
+
+        return $this->emptyAggregateSummary();
+    }
+
+    /**
+     * @param  Collection<int, User>  $learners
+     * @param  class-string<WritingExerciseAttempt|SmartAbstractAttempt>  $attemptClass
+     * @return array<string, mixed>
+     */
+    private function attemptOverview(Collection $learners, string $attemptClass, string $exerciseRelation): array
+    {
+        $learnerIds = $learners->pluck('id')->all();
+
+        if ($learnerIds === []) {
+            return $this->emptyAggregateSummary();
+        }
+
+        $attemptsQuery = $attemptClass::query()
+            ->whereIn('user_id', $learnerIds);
+        $totalAttempts = (clone $attemptsQuery)->count();
+
+        return [
+            'total_attempts' => $totalAttempts,
+            'average_score' => $totalAttempts > 0 ? (int) round((float) (clone $attemptsQuery)->avg('score')) : 0,
+            'best_score' => $totalAttempts > 0 ? (int) (clone $attemptsQuery)->max('score') : 0,
+            'latest_attempts' => $attemptClass::query()
+                ->with([$exerciseRelation, 'user'])
+                ->whereIn('user_id', $learnerIds)
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(fn (WritingExerciseAttempt|SmartAbstractAttempt $attempt): array => $this->formatAiAttempt($attempt, $exerciseRelation))
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatAiAttempt(WritingExerciseAttempt|SmartAbstractAttempt $attempt, string $exerciseRelation): array
+    {
+        $exercise = $attempt->{$exerciseRelation};
+
+        return [
+            'learner' => $this->formatLearner($attempt->user),
+            'attempt' => [
+                'id' => $attempt->id,
+                'exercise' => [
+                    'id' => $exercise->id,
+                    'title' => $exercise->title,
+                    'language' => $exercise->language,
+                    'level' => $exercise->level,
+                ],
+                'score' => $attempt->score,
+                'status' => $attempt->status,
+                'feedback' => $attempt->feedback,
+                'created_at' => $attempt->created_at,
+            ],
         ];
     }
 

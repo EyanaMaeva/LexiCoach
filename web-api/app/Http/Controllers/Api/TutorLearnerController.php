@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\LearnerAssociationCode;
 use App\Models\ReadingExerciseAttempt;
+use App\Models\SmartAbstractAttempt;
 use App\Models\User;
+use App\Models\WritingExerciseAttempt;
 use App\Services\LearningModeProgressSummary;
 use App\Services\ReadingProgressSummary;
+use App\Services\SmartAbstractProgressSummary;
+use App\Services\WritingProgressSummary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +20,8 @@ class TutorLearnerController extends Controller
 {
     public function __construct(
         private readonly ReadingProgressSummary $readingProgressSummary,
+        private readonly WritingProgressSummary $writingProgressSummary,
+        private readonly SmartAbstractProgressSummary $smartAbstractProgressSummary,
         private readonly LearningModeProgressSummary $learningModeProgressSummary,
     ) {}
 
@@ -108,6 +114,50 @@ class TutorLearnerController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tentatives de lecture du learner recuperees.',
+            'data' => [
+                'learner' => $this->formatLearner($learner),
+                'attempts' => $attempts,
+            ],
+        ]);
+    }
+
+    public function writingAttempts(Request $request, User $learner): JsonResponse
+    {
+        $tutor = $this->userFrom($request);
+        $this->ensureTutorCanAccessLearner($tutor, $learner);
+
+        $attempts = WritingExerciseAttempt::query()
+            ->with('writingExercise')
+            ->whereBelongsTo($learner, 'user')
+            ->latest()
+            ->get()
+            ->map(fn (WritingExerciseAttempt $attempt): array => $this->writingProgressSummary->formatAttempt($attempt));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tentatives writing du learner recuperees.',
+            'data' => [
+                'learner' => $this->formatLearner($learner),
+                'attempts' => $attempts,
+            ],
+        ]);
+    }
+
+    public function smartAbstractAttempts(Request $request, User $learner): JsonResponse
+    {
+        $tutor = $this->userFrom($request);
+        $this->ensureTutorCanAccessLearner($tutor, $learner);
+
+        $attempts = SmartAbstractAttempt::query()
+            ->with('smartAbstractExercise')
+            ->whereBelongsTo($learner, 'user')
+            ->latest()
+            ->get()
+            ->map(fn (SmartAbstractAttempt $attempt): array => $this->smartAbstractProgressSummary->formatAttempt($attempt));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tentatives smart abstract du learner recuperees.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
                 'attempts' => $attempts,

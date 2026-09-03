@@ -59,6 +59,22 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<WritingExerciseAttempt, $this>
+     */
+    public function writingExerciseAttempts(): HasMany
+    {
+        return $this->hasMany(WritingExerciseAttempt::class);
+    }
+
+    /**
+     * @return HasMany<SmartAbstractAttempt, $this>
+     */
+    public function smartAbstractAttempts(): HasMany
+    {
+        return $this->hasMany(SmartAbstractAttempt::class);
+    }
+
+    /**
      * @return HasMany<LearnerAssociationCode, $this>
      */
     public function learnerAssociationCodes(): HasMany

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EvaluateReadingExerciseRequest;
 use App\Models\ReadingExercise;
+use App\Models\ReadingExerciseAttempt;
+use App\Models\User;
 use App\Services\ReadingEvaluator;
 use Illuminate\Http\JsonResponse;
 
@@ -51,10 +53,24 @@ class ReadingExerciseController extends Controller
     ): JsonResponse {
         abort_unless($readingExercise->is_active, 404);
 
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
         $result = $this->readingEvaluator->evaluate(
             expectedText: $readingExercise->text,
             transcript: $request->validated('transcript'),
         );
+
+        $attempt = ReadingExerciseAttempt::query()->create([
+            'user_id' => $user->id,
+            'reading_exercise_id' => $readingExercise->id,
+            'transcript' => $result['transcript'],
+            'score' => $result['score'],
+            'status' => $result['status'],
+            'is_correct' => $result['is_correct'],
+            'words' => $result['words'],
+            'feedback' => $result['feedback'],
+        ]);
 
         return response()->json([
             'success' => true,
@@ -62,6 +78,7 @@ class ReadingExerciseController extends Controller
             'data' => [
                 'exercise' => $this->formatExercise($readingExercise),
                 'result' => $result,
+                'attempt' => $this->formatAttemptSummary($attempt),
             ],
         ]);
     }
@@ -77,6 +94,20 @@ class ReadingExerciseController extends Controller
             'text' => $exercise->text,
             'language' => $exercise->language,
             'level' => $exercise->level,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatAttemptSummary(ReadingExerciseAttempt $attempt): array
+    {
+        return [
+            'id' => $attempt->id,
+            'score' => $attempt->score,
+            'status' => $attempt->status,
+            'is_correct' => $attempt->is_correct,
+            'created_at' => $attempt->created_at,
         ];
     }
 }

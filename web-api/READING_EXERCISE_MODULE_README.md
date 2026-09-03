@@ -4,10 +4,12 @@ Ce document explique le module backend pour l exercice de lecture avec speech-to
 
 Le code reste volontairement simple pour une etudiante:
 
+- Laravel fournit les modes d apprentissage disponibles
 - Flutter affiche le texte a lire
 - Flutter utilise `flutter_tts` pour faire lire le texte par le telephone
 - Flutter utilise `speech_to_text` pour transformer la voix de l utilisateur en texte
 - Laravel recoit le texte reconnu, le compare avec le texte officiel, puis retourne un score et un feedback
+- Laravel sauvegarde chaque tentative pour construire la progression de l apprenante
 
 Important: le backend ne transforme pas l audio en texte dans cette version MVP. Le telephone fait deja cette partie.
 
@@ -15,17 +17,45 @@ Important: le backend ne transforme pas l audio en texte dans cette version MVP.
 
 Quand l utilisateur ouvre Reading Practice:
 
-1. L application recupere un exercice depuis le backend.
-2. Elle affiche le texte a lire.
-3. Le bouton Listen utilise le text-to-speech cote Flutter.
-4. Le bouton micro utilise le speech-to-text cote Flutter.
-5. Flutter envoie le transcript au backend.
-6. Laravel compare le transcript avec le texte attendu.
-7. Laravel retourne les mots corrects, manquants, incorrects ou en trop.
+1. L application recupere les learning modes depuis le backend.
+2. L utilisatrice choisit le mode `reading`.
+3. L application recupere les exercices lies au mode `reading`.
+4. Elle affiche le texte a lire.
+5. Le bouton Listen utilise le text-to-speech cote Flutter.
+6. Le bouton micro utilise le speech-to-text cote Flutter.
+7. Flutter envoie le transcript au backend.
+8. Laravel compare le transcript avec le texte attendu.
+9. Laravel sauvegarde la tentative.
+10. Laravel retourne les mots corrects, manquants, incorrects ou en trop.
+11. Flutter peut recuperer la progression du learner plus tard.
 
 ## Scenarios de la fonctionnalite
 
 Cette partie sert a comprendre le parcours complet avant de coder le frontend.
+
+### Scenario 0 - Afficher les learning modes
+
+L utilisatrice ouvre l ecran `Practice Exercises`.
+
+Le frontend doit appeler:
+
+```http
+GET /api/learning-modes
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+Le backend retourne les modes actifs:
+
+```text
+reading
+writing
+dictation
+word-splitting
+smart-abstract
+```
+
+Pour l instant, seul `reading` est operationnel jusqu a l evaluation et la progression. Les autres modes sont prepares pour les prochains modules.
 
 ### Scenario 1 - Ouvrir Reading Practice
 
@@ -35,10 +65,10 @@ Ce que le frontend doit faire:
 
 1. Verifier que l utilisatrice est connectee.
 2. Recuperer le token sauvegarde apres login ou register.
-3. Appeler l API pour charger les exercices:
+3. Appeler l API pour charger les exercices du mode reading:
 
 ```http
-GET /api/reading-exercises
+GET /api/learning-modes/reading/exercises
 Authorization: Bearer {access_token}
 Accept: application/json
 ```
@@ -209,6 +239,37 @@ Cette logique permet un parcours proche de Duolingo:
 Listen -> Speak -> Check -> Feedback -> Try again
 ```
 
+### Scenario 8 - Voir la progression de lecture
+
+Chaque appel a `evaluate` sauvegarde une tentative.
+
+Le frontend peut ensuite afficher la progression dans le dashboard ou dans le profil.
+
+Pour recuperer le resume:
+
+```http
+GET /api/me/reading-progress
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+Pour recuperer l historique complet:
+
+```http
+GET /api/me/reading-attempts
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+Ce que le frontend peut afficher:
+
+- nombre total de tentatives
+- nombre d exercices termines parfaitement
+- score moyen
+- meilleur score
+- derniere tentative
+- historique des anciens essais
+
 ## Routes disponibles
 
 Base URL locale:
@@ -222,6 +283,82 @@ Toutes les routes de ce module demandent un token Sanctum:
 ```http
 Authorization: Bearer {access_token}
 Accept: application/json
+```
+
+Toutes les routes de ce module demandent aussi le role:
+
+```text
+learner
+```
+
+Donc il y a deux controles:
+
+1. `auth:sanctum`: l utilisateur doit etre connecte.
+2. `role:learner`: l utilisateur connecte doit etre un apprenant.
+
+Si le token est absent, Laravel retourne `401 Unauthenticated`.
+
+Si le token existe mais que le role n est pas `learner`, Laravel retourne `403 Forbidden`.
+
+### Liste des learning modes
+
+```http
+GET /api/learning-modes
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Modes d apprentissage recuperes.",
+    "data": {
+        "learning_modes": [
+            {
+                "id": 1,
+                "name": "Reading Practice",
+                "slug": "reading",
+                "description": "Read a sentence aloud, compare your transcript and improve fluency.",
+                "is_active": true,
+                "sort_order": 1
+            }
+        ]
+    }
+}
+```
+
+### Exercices du mode reading
+
+```http
+GET /api/learning-modes/reading/exercises
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Exercices du mode reading recuperes.",
+    "data": {
+        "learning_mode": {
+            "id": 1,
+            "name": "Reading Practice",
+            "slug": "reading",
+            "description": "Read a sentence aloud, compare your transcript and improve fluency.",
+            "is_active": true,
+            "sort_order": 1
+        },
+        "exercises": [
+            {
+                "id": 1,
+                "title": "Museum visit",
+                "text": "The children visited the beautiful museum yesterday.",
+                "language": "en-US",
+                "level": "beginner"
+            }
+        ]
+    }
+}
 ```
 
 ### Liste des exercices
@@ -328,10 +465,151 @@ Reponse:
                 "title": "Good job!",
                 "message": "You read most of the sentence correctly. Try again and focus on the highlighted words."
             }
+        },
+        "attempt": {
+            "id": 12,
+            "score": 86,
+            "status": "good",
+            "is_correct": false,
+            "created_at": "2026-09-03T10:00:00.000000Z"
         }
     }
 }
 ```
+
+Quand cette route est appelee, Laravel cree aussi une ligne dans la table:
+
+```text
+reading_exercise_attempts
+```
+
+Cette table permet de garder l historique des essais.
+
+### Historique des tentatives
+
+```http
+GET /api/me/reading-attempts
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Tentatives de lecture recuperees.",
+    "data": {
+        "attempts": [
+            {
+                "id": 12,
+                "exercise": {
+                    "id": 1,
+                    "title": "Museum visit",
+                    "text": "The children visited the beautiful museum yesterday.",
+                    "language": "en-US",
+                    "level": "beginner"
+                },
+                "transcript": "The children visited beautiful museum yesterday.",
+                "score": 86,
+                "status": "good",
+                "is_correct": false,
+                "words": [
+                    {
+                        "expected": "the",
+                        "actual": null,
+                        "status": "missing"
+                    }
+                ],
+                "feedback": {
+                    "title": "Good job!",
+                    "message": "You read most of the sentence correctly. Try again and focus on the highlighted words."
+                },
+                "created_at": "2026-09-03T10:00:00.000000Z"
+            }
+        ]
+    }
+}
+```
+
+### Resume de progression
+
+```http
+GET /api/me/reading-progress
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Progression de lecture recuperee.",
+    "data": {
+        "progress": {
+            "total_attempts": 8,
+            "completed_exercises": 3,
+            "average_score": 82,
+            "best_score": 100,
+            "latest_attempt": {
+                "id": 12,
+                "score": 86,
+                "status": "good",
+                "is_correct": false,
+                "created_at": "2026-09-03T10:00:00.000000Z"
+            }
+        }
+    }
+}
+```
+
+### Progression globale
+
+```http
+GET /api/me/progress
+```
+
+Reponse:
+
+```json
+{
+    "success": true,
+    "message": "Progression globale recuperee.",
+    "data": {
+        "progress": {
+            "reading": {
+                "learning_mode": {
+                    "id": 1,
+                    "name": "Reading Practice",
+                    "slug": "reading"
+                },
+                "summary": {
+                    "total_attempts": 8,
+                    "completed_exercises": 3,
+                    "average_score": 82,
+                    "best_score": 100,
+                    "latest_attempt": null
+                }
+            },
+            "writing": {
+                "learning_mode": {
+                    "id": 2,
+                    "name": "Writing Assistant",
+                    "slug": "writing"
+                },
+                "summary": {
+                    "total_attempts": 0,
+                    "completed_exercises": 0,
+                    "average_score": 0,
+                    "best_score": 0,
+                    "latest_attempt": null
+                }
+            }
+        }
+    }
+}
+```
+
+Pour le moment, la vraie progression est calculee pour `reading`.
+
+Les autres modes retournent des scores a zero parce qu ils ne sont pas encore implementes.
 
 ## Signification des statuts
 
@@ -379,17 +657,40 @@ Le backend peut detecter que `is` et `the` sont manquants.
 
 ```text
 app/Http/Controllers/Api/ReadingExerciseController.php
+app/Http/Controllers/Api/LearningModeController.php
+app/Http/Controllers/Api/GlobalProgressController.php
 app/Http/Requests/EvaluateReadingExerciseRequest.php
+app/Models/LearningMode.php
 app/Models/ReadingExercise.php
+app/Models/ReadingExerciseAttempt.php
 app/Services/ReadingEvaluator.php
+app/Services/ReadingProgressSummary.php
+database/migrations/2026_09_03_020000_create_learning_modes_table.php
+database/migrations/2026_09_03_020100_add_learning_mode_id_to_reading_exercises_table.php
 database/migrations/2026_09_02_000000_create_reading_exercises_table.php
+database/migrations/2026_09_03_010000_create_reading_exercise_attempts_table.php
+database/factories/LearningModeFactory.php
 database/factories/ReadingExerciseFactory.php
+database/factories/ReadingExerciseAttemptFactory.php
 tests/Feature/ReadingExerciseApiTest.php
+tests/Feature/LearningModeApiTest.php
 ```
 
 ## Donnees de demo
 
 Le seeder ajoute deux exercices:
+
+Il ajoute aussi les learning modes:
+
+```text
+Reading Practice
+Writing Assistant
+Vocal Dictation
+Word Splitting
+Smart Abstract
+```
+
+Les exercices de lecture sont lies au mode `reading`.
 
 ```text
 The children visited the beautiful museum yesterday.

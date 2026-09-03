@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\LearningMode;
 use App\Models\ReadingExercise;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,6 +19,14 @@ class ReadingExerciseFactory extends Factory
     public function definition(): array
     {
         return [
+            'learning_mode_id' => LearningMode::query()->firstOrCreate(
+                ['slug' => LearningMode::SLUG_READING],
+                [
+                    'name' => 'Reading Practice',
+                    'description' => 'Read a sentence aloud, compare your transcript and improve fluency.',
+                    'sort_order' => 1,
+                ],
+            )->id,
             'title' => fake()->sentence(3),
             'text' => fake()->sentence(8),
             'language' => 'en-US',

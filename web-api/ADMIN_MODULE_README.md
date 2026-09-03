@@ -1,0 +1,189 @@
+# Module Admin Dashboard
+
+Ce module permet a un administrateur de suivre l application et de gerer les roles des utilisateurs.
+
+Il contient deux parties:
+
+```text
+API Admin protegee par role admin
+SPA web Blade /admin/dashboard
+```
+
+La partie web admin est faite avec deux pages Blade autonomes dans le backend Laravel. Elles consomment les routes API avec JavaScript et ne touchent pas a l application mobile.
+
+## Acces
+
+Un admin doit se connecter avec:
+
+```http
+POST /api/auth/login
+```
+
+Puis envoyer le token sur les routes admin:
+
+```text
+Authorization: Bearer {access_token}
+Accept: application/json
+```
+
+Si le user connecte n a pas le role `admin`, le backend retourne `403 Forbidden`.
+
+Apres `php artisan migrate --seed`, un compte admin de demo est disponible:
+
+```text
+email: admin@example.com
+password: password123
+```
+
+## Routes disponibles
+
+### Dashboard admin
+
+```http
+GET /api/admin/dashboard
+```
+
+Cette route retourne:
+
+- le nombre total d utilisateurs;
+- le nombre de learners;
+- le nombre de tutors;
+- le nombre d admins;
+- le nombre de learning modes;
+- le nombre d exercices reading;
+- le nombre de tentatives reading;
+- la moyenne reading globale;
+- le meilleur score reading;
+- le nombre d associations tutor/learner;
+- les dernieres tentatives.
+
+Exemple de reponse:
+
+```json
+{
+  "success": true,
+  "message": "Dashboard admin recupere.",
+  "data": {
+    "dashboard": {
+      "users": {
+        "total": 25,
+        "learners": 18,
+        "tutors": 5,
+        "admins": 2,
+        "recent": []
+      },
+      "learning": {
+        "modes": 5,
+        "reading_exercises": 12,
+        "reading_attempts": 80,
+        "average_reading_score": 74,
+        "best_reading_score": 100
+      },
+      "tutor_view": {
+        "linked_pairs": 10,
+        "tutors_with_learners": 4
+      },
+      "recent_attempts": []
+    }
+  }
+}
+```
+
+### Lister les utilisateurs
+
+```http
+GET /api/admin/users
+```
+
+Filtres optionnels:
+
+```text
+GET /api/admin/users?role=tutor
+GET /api/admin/users?search=marie
+GET /api/admin/users?role=learner&search=marie
+```
+
+La route retourne les 100 comptes les plus recents.
+
+### Voir un utilisateur
+
+```http
+GET /api/admin/users/{user}
+```
+
+`{user}` est l id de l utilisateur.
+
+### Modifier le role d un utilisateur
+
+```http
+PATCH /api/admin/users/{user}/role
+```
+
+Body:
+
+```json
+{
+  "role": "tutor"
+}
+```
+
+Roles acceptes:
+
+```text
+learner
+tutor
+admin
+```
+
+Regle importante: un admin ne peut pas retirer son propre role admin.
+
+## SPA web
+
+La page de connexion est disponible ici:
+
+```text
+/admin/login
+```
+
+Le dashboard est disponible ici:
+
+```text
+/admin/dashboard
+```
+
+Le parcours est volontairement separe:
+
+1. `/admin/login` affiche seulement le formulaire de connexion admin.
+2. La page appelle `POST /api/auth/login`.
+3. Si le role vaut `admin`, elle sauvegarde le token et redirige vers `/admin/dashboard`.
+4. `/admin/dashboard` verifie le role avec `GET /api/auth/me`.
+5. Le dashboard charge `GET /api/admin/dashboard`.
+6. Le dashboard charge `GET /api/admin/users`.
+7. Le dashboard permet de filtrer les comptes.
+8. Le dashboard permet de changer le role d un utilisateur.
+
+Si un visiteur ouvre `/admin/dashboard` sans token, la page redirige vers `/admin/login`.
+
+## Design
+
+Le dashboard utilise:
+
+- Tailwind CSS;
+- Blade avec JavaScript;
+- les couleurs du mobile: `#F9F7FF`, `#6547E8`, `#222033`, `#77718A`, `#E2DDF2`;
+- pas de gradient;
+- des boutons capsule et champs arrondis dans un style proche de Cupertino;
+- une interface simple en SPA.
+
+## Fichiers importants
+
+```text
+routes/api.php
+routes/web.php
+app/Http/Controllers/Api/AdminDashboardController.php
+app/Http/Controllers/Api/AdminUserController.php
+app/Services/AdminDashboardSummary.php
+resources/views/admin/login.blade.php
+resources/views/admin/dashboard.blade.php
+tests/Feature/AdminApiTest.php
+```

@@ -25,6 +25,7 @@ class AuthApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.full_name', 'Marie Dupont')
             ->assertJsonPath('data.user.email', 'marie@example.com')
+            ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
             ->assertJsonPath('data.token.type', 'Bearer')
             ->assertJsonStructure([
                 'data' => [
@@ -37,7 +38,43 @@ class AuthApiTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'Marie Dupont',
             'email' => 'marie@example.com',
+            'role' => User::ROLE_LEARNER,
         ]);
+    }
+
+    public function test_tutor_can_register_from_mobile_app(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'full_name' => 'Teacher Paul',
+            'email' => 'paul@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'device_name' => 'test-client',
+            'role' => User::ROLE_TUTOR,
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.user.role', User::ROLE_TUTOR)
+            ->assertJsonPath('data.token.type', 'Bearer');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'paul@example.com',
+            'role' => User::ROLE_TUTOR,
+        ]);
+    }
+
+    public function test_admin_cannot_register_from_public_auth_route(): void
+    {
+        $this->postJson('/api/auth/register', [
+            'full_name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'role' => User::ROLE_ADMIN,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['role']);
     }
 
     public function test_user_can_login_and_receive_a_sanctum_token(): void
@@ -58,6 +95,7 @@ class AuthApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.full_name', 'Marie Dupont')
+            ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
             ->assertJsonPath('data.token.type', 'Bearer')
             ->assertJsonStructure([
                 'data' => [
@@ -97,7 +135,8 @@ class AuthApiTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/auth/me')
             ->assertOk()
-            ->assertJsonPath('data.user.email', 'marie@example.com');
+            ->assertJsonPath('data.user.email', 'marie@example.com')
+            ->assertJsonPath('data.user.role', User::ROLE_LEARNER);
     }
 
     public function test_authenticated_user_can_logout_current_token(): void
@@ -128,10 +167,26 @@ class AuthApiTest extends TestCase
             ->assertSeeText('/api/auth/login')
             ->assertSeeText('/api/auth/me')
             ->assertSeeText('/api/auth/logout')
+            ->assertSeeText('/api/me/reading-attempts')
+            ->assertSeeText('/api/me/reading-progress')
+            ->assertSeeText('/api/me/association-code')
+            ->assertSeeText('/api/me/association-code/regenerate')
+            ->assertSeeText('/api/tutor/dashboard')
+            ->assertSeeText('/api/tutor/learners/link')
+            ->assertSeeText('/api/tutor/learners/{learner}/progress')
+            ->assertSeeText('/api/tutor/learners/{learner}')
+            ->assertSeeText('/api/admin/dashboard')
+            ->assertSeeText('/api/admin/users')
+            ->assertSeeText('/api/admin/users/{user}/role')
             ->assertSeeText('"success": true')
+            ->assertSeeText('"role": "learner"')
             ->assertSeeText('"access_token": "1|exempleDeTokenSanctum"')
             ->assertSeeText('Scenarios et role du frontend')
-            ->assertSeeText('Scenario 6 - Evaluation de la lecture')
+            ->assertSeeText('Scenario 7 - Evaluation de la lecture')
+            ->assertSeeText('Scenario 11 - Tutor consulte la progression du learner')
+            ->assertSeeText('Scenario 14 - Admin utilise login et dashboard separes')
+            ->assertSeeText('/api/learning-modes')
+            ->assertSeeText('/api/me/progress')
             ->assertSeeText('Exemples Flutter')
             ->assertSeeText('Copier la doc en .md')
             ->assertSee('# Documentation API')

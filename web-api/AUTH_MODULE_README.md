@@ -10,6 +10,7 @@ Le backend permet de faire:
 - une connexion avec `email`, `password`
 - la recuperation de l'utilisateur connecte
 - la deconnexion
+- la gestion simple des roles `learner`, `tutor` et `admin`
 - une page de documentation API accessible depuis une route backend
 
 Le frontend n'a pas ete modifie.
@@ -100,6 +101,105 @@ Exemple:
 Authorization: Bearer 1|exempleDeTokenSanctum
 ```
 
+### Roles
+
+Un role indique ce que l'utilisateur a le droit de faire dans l'application.
+
+Dans ce projet, il y a 3 roles stockes en base:
+
+- `learner`: apprenant qui fait les exercices
+- `tutor`: tuteur qui peut associer des learners avec un code et suivre leur progression
+- `admin`: administrateur qui pourra gerer les comptes et les statistiques plus tard
+
+Il existe aussi `visitor` dans le diagramme de use case, mais ce n'est pas un role stocke en base.
+
+Un `visitor` est simplement une personne non connectee.
+
+Quand un utilisateur cree un compte avec:
+
+```http
+POST /api/auth/register
+```
+
+le backend lui donne automatiquement le role:
+
+```text
+learner
+```
+
+Le frontend ne choisit donc pas le role pendant l'inscription.
+
+### Authentication vs Authorization
+
+Ces deux mots sont importants.
+
+Authentication:
+
+```text
+Est-ce que l'utilisateur est connecte ?
+```
+
+Authorization:
+
+```text
+Est-ce que l'utilisateur connecte a le bon role pour faire cette action ?
+```
+
+Exemple:
+
+```text
+Marie est connectee.
+Son role est learner.
+Elle peut faire les exercices de lecture.
+```
+
+### Inscription tutor depuis l app mobile
+
+Un tutor peut aussi s inscrire depuis l application mobile en envoyant `role: tutor`.
+
+```json
+{
+  "full_name": "Teacher Paul",
+  "email": "paul@example.com",
+  "password": "password123",
+  "password_confirmation": "password123",
+  "device_name": "flutter-app",
+  "role": "tutor"
+}
+```
+
+Le backend accepte seulement ces roles sur la route publique d inscription:
+
+```text
+learner
+tutor
+```
+
+Le role `admin` n est pas autorise sur `POST /api/auth/register`. Il devra etre gere plus tard par le module admin.
+
+Autre exemple:
+
+```text
+Paul est connecte.
+Son role est tutor.
+Il ne peut pas appeler les routes learner de Reading Practice.
+Il peut appeler les routes tutor pour associer des learners et suivre leur progression.
+```
+
+Dans ce cas, le backend retourne:
+
+```json
+{
+    "message": "This action is unauthorized."
+}
+```
+
+avec un status HTTP:
+
+```text
+403 Forbidden
+```
+
 ### Laravel Sanctum
 
 Sanctum est le package Laravel utilise pour gerer les tokens API. Il est adapte pour les APIs simples, les apps mobiles et les SPAs.
@@ -158,6 +258,47 @@ Si le token est absent ou invalide, Laravel retourne:
 }
 ```
 
+### Middleware role
+
+Le middleware `role` verifie le role de l'utilisateur connecte.
+
+Dans ce projet, il se trouve ici:
+
+```text
+app/Http/Middleware/EnsureUserHasRole.php
+```
+
+Il est declare dans:
+
+```text
+bootstrap/app.php
+```
+
+Exemple:
+
+```php
+Route::middleware(['auth:sanctum', 'role:learner'])->group(function () {
+    Route::get('/reading-exercises', [ReadingExerciseController::class, 'index']);
+});
+```
+
+Cette route demande deux choses:
+
+1. L'utilisateur doit etre connecte.
+2. L'utilisateur doit avoir le role `learner`.
+
+Si l'utilisateur n'est pas connecte, le backend retourne:
+
+```text
+401 Unauthenticated
+```
+
+Si l'utilisateur est connecte mais n'a pas le bon role, le backend retourne:
+
+```text
+403 Forbidden
+```
+
 ## Consommer l'API
 
 ### 1. Inscription
@@ -193,6 +334,7 @@ Reponse succes:
             "id": 1,
             "full_name": "Marie Dupont",
             "email": "marie@example.com",
+            "role": "learner",
             "email_verified_at": null,
             "created_at": "2026-08-31T10:00:00.000000Z"
         },
@@ -236,6 +378,7 @@ Reponse succes:
             "id": 1,
             "full_name": "Marie Dupont",
             "email": "marie@example.com",
+            "role": "learner",
             "email_verified_at": null,
             "created_at": "2026-08-31T10:00:00.000000Z"
         },
@@ -282,6 +425,7 @@ Reponse succes:
             "id": 1,
             "full_name": "Marie Dupont",
             "email": "marie@example.com",
+            "role": "learner",
             "email_verified_at": null,
             "created_at": "2026-08-31T10:00:00.000000Z"
         }
@@ -407,6 +551,9 @@ final response = await http.post(
 
 final data = jsonDecode(response.body);
 final token = data['data']['token']['access_token'];
+final role = data['data']['user']['role'];
+
+print(role); // learner, tutor ou admin
 ```
 
 ### Exemple de requete protegee Flutter
@@ -422,6 +569,14 @@ final response = await http.get(
 ```
 
 La notion importante est celle-ci: apres login ou inscription, Flutter recupere `data.token.access_token`, puis l'envoie dans le header `Authorization` pour toutes les routes protegees.
+
+Flutter doit aussi lire `data.user.role` pour ouvrir le bon espace:
+
+```text
+learner -> exercices et pratique
+tutor   -> suivi des apprenants associes
+admin   -> gestion utilisateurs/statistiques plus tard
+```
 
 ## Google Auth
 

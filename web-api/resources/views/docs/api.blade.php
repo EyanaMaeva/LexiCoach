@@ -483,11 +483,19 @@
             padding: 16px 18px 18px;
         }
 
+        .guide-body.compact {
+            grid-template-columns: minmax(180px, .8fr) minmax(0, 2fr);
+        }
+
         .guide-list {
             background: var(--panel-soft);
             border: 1px solid var(--line);
             border-radius: 8px;
             padding: 14px;
+        }
+
+        .guide-list.wide {
+            min-width: 0;
         }
 
         .guide-list h4 {
@@ -548,6 +556,10 @@
             }
 
             .guide-body {
+                grid-template-columns: 1fr;
+            }
+
+            .guide-body.compact {
                 grid-template-columns: 1fr;
             }
         }
@@ -612,8 +624,9 @@
                 Modules
             </strong>
             @foreach ($documentation['modules'] as $module)
-            <a href="#{{ $module['slug'] }}"><span class="nav-dot"></span>{{ $module['name'] }}</a>
+                <a href="#{{ $module['slug'] }}"><span class="nav-dot"></span>{{ $module['name'] }}</a>
             @endforeach
+            <a href="#roles"><span class="nav-dot"></span>Roles utilisateur</a>
             <a href="#scenarios"><span class="nav-dot"></span>Scenarios frontend</a>
             <a href="#flutter"><span class="nav-dot"></span>Exemples Flutter</a>
         </nav>
@@ -647,6 +660,51 @@
                         <li>{{ $step }}</li>
                     @endforeach
                 </ol>
+            </section>
+
+            <section id="roles">
+                <div class="section-heading">
+                    <span class="icon-box">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M16 3.1a4 4 0 0 1 0 7.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <h2>Roles utilisateur</h2>
+                </div>
+                <p class="section-description">Le backend gere les roles <code>learner</code>, <code>tutor</code> et <code>admin</code>. Le role <code>visitor</code> represente une personne non connectee et n est pas stocke en base.</p>
+
+                <div class="guide-grid">
+                    @foreach ($documentation['roles'] as $role)
+                        <article class="guide-card">
+                            <div class="guide-card-header">
+                                <span class="guide-tag">{{ $role['stored_in_database'] ? 'Compte connecte' : 'Public' }}</span>
+                                <h3>{{ $role['name'] }}</h3>
+                                <p>{{ $role['description'] }}</p>
+                            </div>
+
+                            <div class="guide-body compact">
+                                <div class="guide-list">
+                                    <h4>Stockage</h4>
+                                    <ul>
+                                        <li>{{ $role['stored_in_database'] ? 'Ce role est stocke dans la colonne users.role.' : 'Ce role n est pas stocke en base.' }}</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-list wide">
+                                    <h4>Permissions principales</h4>
+                                    <ul>
+                                        @foreach ($role['permissions'] as $permission)
+                                            <li>{{ $permission }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
             </section>
 
             <section id="scenarios">

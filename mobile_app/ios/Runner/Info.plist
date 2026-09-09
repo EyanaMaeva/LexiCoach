@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LexiCoach a besoin d'accéder au microphone pour évaluer votre lecture à voix haute.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>LexiCoach utilise la reconnaissance vocale pour transcrire et évaluer votre lecture à voix haute.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

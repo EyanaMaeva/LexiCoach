@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'practice_exercises.dart';
-import 'reading_practice.dart';
+import 'reading_exercises_list.dart';
 import 'app_colors.dart';
 import 'profile.dart';
 
@@ -227,7 +227,7 @@ class _DashboardState extends State<Dashboard> {
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const ReadingPractice(exerciseId: 1)),
+                                    MaterialPageRoute(builder: (context) => const ReadingExercisesList()),
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(

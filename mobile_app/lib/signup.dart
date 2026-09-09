@@ -14,6 +14,7 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -30,12 +31,16 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> createAccount() async {
+    if (_isLoading) return;
+
     if (passwordController.text != confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Passwords do not match.")),
       );
       return;
     }
+
+    setState(() => _isLoading = true);
 
     try {
       final authApi = AuthApiService();
@@ -47,23 +52,35 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       final user = response['data']['user'];
+      final role = user['role'] as String? ?? 'learner';
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Dashboard(
-            userName: user['full_name'].toString().split(' ')[0],
+      if (role == 'learner') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Dashboard(
+              userName: user['full_name'].toString().split(' ')[0],
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Connected as $role. This space is coming soon.'),
+          ),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error.toString())),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -152,22 +169,32 @@ class _SignUpPageState extends State<SignUpPage> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: createAccount,
+                  onPressed: _isLoading ? null : createAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: AppColors.primary.withOpacity(0.7),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    "Sign Up",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 24),

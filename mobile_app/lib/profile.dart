@@ -288,33 +288,40 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
 
-      child: ListTile(
-        leading: Icon(
-          icon,
-
-          color: isDestructive
-              ? Colors.red
-              : AppColors.primary,
-        ),
-
-        title: Text(
-          title,
-
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          leading: Icon(
+            icon,
 
             color: isDestructive
                 ? Colors.red
-                : AppColors.textDark,
+                : AppColors.primary,
           ),
-        ),
 
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: AppColors.textLight,
-        ),
+          title: Text(
+            title,
 
-        onTap: onTap,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+
+              color: isDestructive
+                  ? Colors.red
+                  : AppColors.textDark,
+            ),
+          ),
+
+          trailing: const Icon(
+            Icons.chevron_right,
+            color: AppColors.textLight,
+          ),
+
+          onTap: onTap,
+        ),
       ),
     );
   }

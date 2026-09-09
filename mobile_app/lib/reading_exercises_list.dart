@@ -101,56 +101,65 @@ class _ReadingExercisesListState extends State<ReadingExercisesList> {
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.logoBlue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          child: const Icon(Icons.menu_book_rounded, color: AppColors.logoBlue),
-        ),
-        title: Text(
-          exercise['title'] ?? 'Untitled',
-          style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.textDark, fontSize: 18),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _getLevelColor(exercise['level']).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  exercise['level']?.toString().toUpperCase() ?? 'BEGINNER',
-                  style: TextStyle(
-                    color: _getLevelColor(exercise['level']),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+          leading: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.logoBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.menu_book_rounded, color: AppColors.logoBlue),
+          ),
+          title: Text(
+            exercise['title'] ?? 'Untitled',
+            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.textDark, fontSize: 18),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getLevelColor(exercise['level']).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    exercise['level']?.toString().toUpperCase() ?? 'BEGINNER',
+                    style: TextStyle(
+                      color: _getLevelColor(exercise['level']),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                exercise['language'] ?? 'en-US',
-                style: const TextStyle(color: AppColors.textLight, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textLight),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ReadingPractice(exerciseId: exercise['id']),
+                const SizedBox(width: 8),
+                Text(
+                  exercise['language'] ?? 'en-US',
+                  style: const TextStyle(color: AppColors.textLight, fontSize: 12),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textLight),
+          onTap: () {
+            final id = exercise['id'];
+            if (id == null) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ReadingPractice(exerciseId: id as int),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

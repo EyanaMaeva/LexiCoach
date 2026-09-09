@@ -1,6 +1,7 @@
 import 'dart:convert';
  import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import '../const.dart';
 
 class ReadingApiService {
   ReadingApiService({
@@ -9,7 +10,6 @@ class ReadingApiService {
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const FlutterSecureStorage();
 
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
   static const String _tokenKey = 'auth_token';
 
   final http.Client _client;

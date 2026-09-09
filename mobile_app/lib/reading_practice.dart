@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -14,94 +16,256 @@ class ReadingPractice extends StatefulWidget {
 }
 
 class _ReadingPracticeState extends State<ReadingPractice> {
+  // Instances partagées pour toute l'app : le moteur de reconnaissance vocale
+  // et le TTS sont des singletons natifs côté iOS. En créer une nouvelle
+  // instance à chaque écran laisse l'ancienne encore en cours de libération
+  // (dispose() ne peut pas attendre les futures async), ce qui fait que le
+  // 2e exercice s'initialise "en apparence" mais n'écoute jamais réellement.
+  static final stt.SpeechToText _stt = stt.SpeechToText();
+  static final FlutterTts _tts = FlutterTts();
+
   final _apiService = ReadingApiService();
-  final _stt = stt.SpeechToText();
-  final _tts = FlutterTts();
 
   Map<String, dynamic>? _exercise;
   bool _isLoading = true;
   bool _isListening = false;
-  String _transcript = "";
+  bool _isSpeaking = false;
+  bool _isEvaluating = false;
+  bool _speechAvailable = false;
+  String _transcript = '';
   Map<String, dynamic>? _evaluationResult;
+  String? _errorMessage;
+  Timer? _listenWatchdog;
 
   @override
   void initState() {
     super.initState();
     _loadExercise();
     _initSpeech();
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _listenWatchdog?.cancel();
+    _tts.stop();
+    _stt.cancel();
+    super.dispose();
+  }
+
+  void _cancelWatchdog() {
+    _listenWatchdog?.cancel();
+    _listenWatchdog = null;
   }
 
   Future<void> _initSpeech() async {
-    await _stt.initialize();
+    // `initialize()` ne remet à jour onError/onStatus que lors du tout
+    // premier appel sur l'instance (elle renvoie tôt si déjà initialisée).
+    // Comme _stt est partagée entre tous les écrans, on réassigne ces
+    // listeners nous-mêmes à chaque écran pour qu'ils pointent toujours
+    // vers l'instance courante et pas un écran précédent déjà démonté.
+    _stt.errorListener = (error) {
+      debugPrint('speech_to_text error: ${error.errorMsg} (permanent: ${error.permanent})');
+      _cancelWatchdog();
+      if (!mounted) return;
+      setState(() => _isListening = false);
+      if (error.errorMsg.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Speech error: ${error.errorMsg}')),
+        );
+      }
+    };
+    _stt.statusListener = (status) {
+      if (!mounted) return;
+      // iOS n'envoie pas toujours finalResult=true : on se fie aussi au statut.
+      if (status == 'done' || status == 'notListening') {
+        if (_isListening) {
+          _cancelWatchdog();
+          setState(() => _isListening = false);
+          if (_transcript.isNotEmpty) _evaluate();
+        }
+      }
+    };
+
+    if (_stt.isAvailable) {
+      if (mounted) setState(() => _speechAvailable = true);
+      return;
+    }
+
+    final available = await _stt.initialize(
+      onError: _stt.errorListener,
+      onStatus: _stt.statusListener,
+    );
+    if (mounted) setState(() => _speechAvailable = available);
   }
 
   Future<void> _loadExercise() async {
     try {
       final data = await _apiService.getExerciseDetail(widget.exerciseId);
+      if (!mounted) return;
       setState(() {
         _exercise = data;
         _isLoading = false;
+        _errorMessage = null;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-      Navigator.pop(context);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
     }
   }
 
-  void _startListening() async {
-    bool available = await _stt.initialize();
-    if (available) {
-      setState(() {
-        _isListening = true;
-        _evaluationResult = null;
-        _transcript = "";
-      });
-      _stt.listen(
-        onResult: (val) => setState(() {
-          _transcript = val.recognizedWords;
+  Future<void> _startListening() async {
+    // Empêche les taps multiples de lancer plusieurs sessions d'écoute en parallèle.
+    if (_isListening || _isEvaluating) return;
+
+    if (!_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Microphone not available. Check permissions.')),
+      );
+      return;
+    }
+
+    // La lecture TTS et l'écoute STT se disputent la session audio iOS :
+    // on coupe toujours le TTS avant de démarrer le micro.
+    if (_isSpeaking) {
+      await _tts.stop();
+      if (mounted) setState(() => _isSpeaking = false);
+    }
+
+    // _stt est partagée entre les écrans : on s'assure qu'aucune session
+    // résiduelle d'un écran précédent (dispose() ne peut pas attendre son
+    // cancel()) n'est encore active avant d'en démarrer une nouvelle.
+    if (_stt.isListening) {
+      await _stt.cancel();
+    }
+    if (!mounted) return;
+
+    setState(() {
+      _isListening = true;
+      _evaluationResult = null;
+      _transcript = '';
+    });
+
+    try {
+      await _stt.listen(
+        onResult: (val) {
+          if (!mounted) return;
+          // Un résultat, même partiel, prouve que le moteur natif écoute bien.
+          _cancelWatchdog();
+          setState(() => _transcript = val.recognizedWords);
           if (val.finalResult) {
-            _isListening = false;
+            setState(() => _isListening = false);
             _evaluate();
           }
-        }),
-        localeId: _exercise?['language'] ?? 'en-US',
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.confirmation,
+          cancelOnError: true,
+          partialResults: true,
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: _exercise?['language'] ?? 'en-US',
+        ),
+      );
+
+      // Le moteur natif peut accepter la demande de listen() sans jamais
+      // produire de résultat ni d'erreur (bug connu du simulateur iOS :
+      // kAFAssistantErrorDomain Code=1101 après une 1ère utilisation).
+      // On détecte ce silence et on redonne la main à l'utilisateur.
+      _listenWatchdog = Timer(const Duration(seconds: 6), () {
+        if (!mounted || !_isListening || _transcript.isNotEmpty) return;
+        _stt.cancel();
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Le micro ne répond pas (limitation connue du simulateur iOS). "
+              "Réessaie, ou teste sur un appareil réel.",
+            ),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isListening = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Microphone error: $e')),
       );
     }
   }
 
-  void _stopListening() async {
-    await _stt.stop();
+  Future<void> _stopListening() async {
+    if (!_isListening) return;
+    _cancelWatchdog();
+    try {
+      await _stt.stop();
+    } catch (_) {}
+    if (!mounted) return;
     setState(() => _isListening = false);
+    if (_transcript.isNotEmpty) _evaluate();
   }
 
   Future<void> _evaluate() async {
-    if (_transcript.isEmpty) return;
+    if (_transcript.isEmpty || _isEvaluating) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _isEvaluating = true);
     try {
       final result = await _apiService.evaluateExercise(widget.exerciseId, _transcript);
+      if (!mounted) return;
       setState(() {
         _evaluationResult = result['result'];
-        _isLoading = false;
+        _isEvaluating = false;
       });
       _showFeedbackModal();
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Evaluation Error: $e")));
+      if (!mounted) return;
+      setState(() => _isEvaluating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Evaluation error: $e')),
+      );
     }
   }
 
   Future<void> _speak() async {
-    if (_exercise == null) return;
-    await _tts.setLanguage(_exercise!['language'] ?? 'en-US');
-    await _tts.speak(_exercise!['text']);
+    if (_exercise == null || _isSpeaking) return;
+
+    // Le micro et le TTS se disputent la session audio iOS : on coupe
+    // toujours l'écoute avant de démarrer la lecture.
+    if (_isListening) {
+      _cancelWatchdog();
+      try {
+        await _stt.stop();
+      } catch (_) {}
+      if (mounted) setState(() => _isListening = false);
+    }
+
+    setState(() => _isSpeaking = true);
+    try {
+      await _tts.setLanguage(_exercise!['language'] ?? 'en-US');
+      await _tts.speak(_exercise!['text'] ?? '');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+    }
+  }
+
+  Future<void> _stopSpeaking() async {
+    await _tts.stop();
+    if (!mounted) return;
+    setState(() => _isSpeaking = false);
   }
 
   void _showFeedbackModal() {
-    if (_evaluationResult == null) return;
+    if (_evaluationResult == null || !mounted) return;
 
-    final feedback = _evaluationResult!['feedback'];
-    final score = _evaluationResult!['score'];
+    final feedback = _evaluationResult!['feedback'] as Map<String, dynamic>?;
+    final score = _evaluationResult!['score'] ?? 0;
 
     showModalBottomSheet(
       context: context,
@@ -119,23 +283,38 @@ class _ReadingPracticeState extends State<ReadingPractice> {
             Container(
               height: 6,
               width: 40,
-              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
-              feedback['title'] ?? 'Feedback',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.textDark),
+              feedback?['title'] ?? 'Feedback',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textDark,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              "Your Score: $score%",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getScoreColor(score)),
+              'Your Score: $score%',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _getScoreColor(score as num),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
-              feedback['message'] ?? '',
+              feedback?['message'] ?? '',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: AppColors.textLight, height: 1.5),
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.textLight,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -145,9 +324,14 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
-                child: const Text("Continue", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -165,8 +349,44 @@ class _ReadingPracticeState extends State<ReadingPractice> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading && _exercise == null) {
+    // Loading initial
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Erreur de chargement
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(_errorMessage!, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLoading = true;
+                      _errorMessage = null;
+                    });
+                    _loadExercise();
+                  },
+                  child: const Text('Retry'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Go back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -192,11 +412,22 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                     child: Center(
                       child: Column(
                         children: [
-                          Text(_exercise?['level']?.toString().toUpperCase() ?? "BEGINNER",
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary, letterSpacing: 1.5)),
                           Text(
-                            _exercise?['title'] ?? "Exercise",
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                            _exercise?['level']?.toString().toUpperCase() ?? 'BEGINNER',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Text(
+                            _exercise?['title'] ?? 'Exercise',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
                           ),
                         ],
                       ),
@@ -211,7 +442,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: LinearProgressIndicator(
-                value: 0.3, // Example progress
+                value: 0.3,
                 backgroundColor: Colors.white,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.logoBlue),
                 minHeight: 8,
@@ -226,7 +457,14 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    const Text("Read the sentence aloud", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                    const Text(
+                      'Read the sentence aloud',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
                     const SizedBox(height: 32),
 
                     // --- SENTENCE CARD ---
@@ -236,25 +474,36 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(40),
-                        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 15))],
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.05),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
                       ),
                       child: Text(
-                        _exercise?['text'] ?? "",
+                        _exercise?['text'] ?? '',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 28, height: 1.4, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          height: 1.4,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 40),
 
-                    // --- ACTION BUTTONS ---
+                    // --- LISTEN BUTTON ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _buildSmallActionButton(
-                          icon: Icons.volume_up_rounded,
-                          label: "Listen",
-                          onPressed: _speak,
+                          icon: _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                          label: _isSpeaking ? 'Stop' : 'Listen',
+                          onPressed: _isSpeaking ? _stopSpeaking : _speak,
                         ),
                       ],
                     ),
@@ -265,24 +514,42 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                     Center(
                       child: Column(
                         children: [
-                          GestureDetector(
-                            onTap: _isListening ? _stopListening : _startListening,
-                            child: Lottie.asset(
-                              "assets/lotties/AI logo Foriday (1).json",
-                              height: 200,
-                              animate: _isListening,
+                          // Spinner d'évaluation
+                          if (_isEvaluating)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: CircularProgressIndicator(),
+                            )
+                          else
+                            GestureDetector(
+                              onTap: _isListening ? _stopListening : _startListening,
+                              child: Lottie.asset(
+                                'assets/lotties/AI logo Foriday (1).json',
+                                height: 200,
+                                animate: _isListening,
+                              ),
                             ),
-                          ),
                           Text(
-                            _isListening ? "Listening..." : "Tap the AI to record",
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textLight),
+                            _isEvaluating
+                                ? 'Evaluating...'
+                                : _isListening
+                                    ? 'Listening... Tap to stop'
+                                    : 'Tap the AI to record',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textLight,
+                            ),
                           ),
                           if (_transcript.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 16),
                               child: Text(
                                 '"$_transcript"',
-                                style: const TextStyle(fontStyle: FontStyle.italic, color: AppColors.primary),
+                                style: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.primary,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -300,7 +567,11 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     );
   }
 
-  Widget _buildSmallActionButton({required IconData icon, required String label, required VoidCallback onPressed}) {
+  Widget _buildSmallActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(20),
@@ -315,7 +586,13 @@ class _ReadingPracticeState extends State<ReadingPractice> {
           children: [
             Icon(icon, size: 20, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+              ),
+            ),
           ],
         ),
       ),

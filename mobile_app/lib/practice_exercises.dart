@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'reading_practice.dart';
+import 'app_colors.dart';
+
+import 'package:lexicoach/reading_exercises_list.dart';
 
 class PracticeExercises extends StatelessWidget {
   const PracticeExercises({super.key});
@@ -7,141 +10,127 @@ class PracticeExercises extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7FF),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            // Custom Header
+            // --- CUSTOM MODERN HEADER ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    color: const Color(0xFF222033),
-                  ),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Practice Exercises",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF222033),
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Choose a category to practice",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF77718A),
-                          ),
-                        ),
-                      ],
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
+                      shadowColor: Colors.black12,
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.more_horiz_rounded),
-                    color: const Color(0xFF222033),
+                  const Column(
+                    children: [
+                      Text(
+                        "Practice",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textDark,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        "Drills & Skills",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(width: 48), // Spacer to balance header
                 ],
               ),
             ),
 
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: GridView.count(
+                padding: const EdgeInsets.all(24),
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+                childAspectRatio: 0.85,
                 children: [
-                  _buildCategoryCard(
+                  _buildModernCategoryCard(
                     context,
                     "Reading",
-                    "Improve reading fluency",
+                    "Fluency practice",
                     Icons.menu_book_rounded,
                     const Color(0xFFE8E1FF),
-                    const Color(0xFF6547E8),
+                    AppColors.logoBlue,
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ReadingPractice()),
+                        MaterialPageRoute(builder: (context) => const ReadingExercisesList()),
                       );
                     },
                   ),
-                  _buildCategoryCard(
-                    context,
-                    "Spelling",
-                    "Practice difficult words",
-                    Icons.abc_rounded,
-                    const Color(0xFFFFF3E0),
-                    const Color(0xFFFF9800),
-                  ),
-                  _buildCategoryCard(
+                  _buildModernCategoryCard(
                     context,
                     "Vocabulary",
-                    "Learn new words",
-                    Icons.credit_card_rounded, // Similar to the icon in image
+                    "Expand your lexicon",
+                    Icons.auto_awesome_motion_rounded,
                     const Color(0xFFE0F2F1),
-                    const Color(0xFF009688),
+                    AppColors.logoTeal,
                   ),
-                  _buildCategoryCard(
+                  _buildModernCategoryCard(
                     context,
-                    "Comprehension",
-                    "Understand what you read",
-                    Icons.help_outline_rounded,
+                    "Spelling",
+                    "Master difficult words",
+                    Icons.abc_rounded,
+                    const Color(0xFFFFF3E0),
+                    AppColors.logoOrange,
+                  ),
+
+                  _buildModernCategoryCard(
+                    context,
+                    "Listen",
+                    "Aural comprehension",
+                    Icons.headset_rounded,
+                    const Color(0xFFF3E5F5),
+                    Colors.purple,
+
+                  ),
+                  _buildModernCategoryCard(
+                    context,
+                    "Grammar",
+                    "Sentence structures",
+                    Icons.edit_note_rounded,
+                    const Color(0xFFE8EAF6),
+                    AppColors.logoPurple,
+                  ),
+                  _buildModernCategoryCard(
+                    context,
+                    "Daily Quiz",
+                    "Test your knowledge",
+                    Icons.timer_outlined,
                     const Color(0xFFFFEBEE),
                     const Color(0xFFF44336),
-                  ),
-                  _buildCategoryCard(
-                    context,
-                    "Listening",
-                    "Improve listening skills",
-                    Icons.headset_rounded,
-                    const Color(0xFFE8EAF6),
-                    const Color(0xFF3F51B5),
+
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 1, // Practice tab selected
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF6547E8),
-          unselectedItemColor: const Color(0xFFAAA5B7),
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.psychology_rounded), label: 'Practice'),
-            BottomNavigationBarItem(icon: Icon(Icons.chrome_reader_mode_rounded), label: 'Read'),
-            BottomNavigationBarItem(icon: Icon(Icons.edit_note_rounded), label: 'Write'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(
+  Widget _buildModernCategoryCard(
     BuildContext context,
     String title,
     String subtitle,
@@ -150,56 +139,53 @@ class PracticeExercises extends StatelessWidget {
     Color iconColor, {
     VoidCallback? onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2DDF2), width: 1),
-          ),
-          child: Row(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor.withOpacity(0.4), // Subtle tint for the card
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white, width: 2), // Clean white border
+          boxShadow: [
+            BoxShadow(
+              color: iconColor.withOpacity(0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: bgColor,
-                  shape: BoxShape.circle,
+                  color: Colors.white, // White container for icon to pop
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: iconColor, size: 28),
+                child: Icon(icon, color: iconColor, size: 26),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF222033),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF77718A),
-                      ),
-                    ),
-                  ],
+              const Spacer(),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textDark,
+                  letterSpacing: -0.5,
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Color(0xFF222033),
-                size: 16,
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textLight,
+                  height: 1.2,
+                ),
               ),
             ],
           ),

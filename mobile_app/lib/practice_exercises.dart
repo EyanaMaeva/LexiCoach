@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'reading_practice.dart';
-import 'app_colors.dart';
-
 import 'package:lexicoach/reading_exercises_list.dart';
+import 'package:lexicoach/vocabulary_practice.dart';
+import 'package:lexicoach/spelling_practice.dart';
+import 'package:lexicoach/listening_practice.dart';
+import 'package:lexicoach/grammar_practice.dart';
+import 'package:lexicoach/daily_quiz.dart';
+import 'app_colors.dart';
 
 class PracticeExercises extends StatelessWidget {
   const PracticeExercises({super.key});
@@ -85,6 +88,12 @@ class PracticeExercises extends StatelessWidget {
                     Icons.auto_awesome_motion_rounded,
                     const Color(0xFFE0F2F1),
                     AppColors.logoTeal,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const VocabularyPractice()),
+                      );
+                    },
                   ),
                   _buildModernCategoryCard(
                     context,
@@ -93,6 +102,12 @@ class PracticeExercises extends StatelessWidget {
                     Icons.abc_rounded,
                     const Color(0xFFFFF3E0),
                     AppColors.logoOrange,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SpellingPractice()),
+                      );
+                    },
                   ),
 
                   _buildModernCategoryCard(
@@ -102,7 +117,12 @@ class PracticeExercises extends StatelessWidget {
                     Icons.headset_rounded,
                     const Color(0xFFF3E5F5),
                     Colors.purple,
-
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ListeningPractice()),
+                      );
+                    },
                   ),
                   _buildModernCategoryCard(
                     context,
@@ -111,6 +131,12 @@ class PracticeExercises extends StatelessWidget {
                     Icons.edit_note_rounded,
                     const Color(0xFFE8EAF6),
                     AppColors.logoPurple,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const GrammarPractice()),
+                      );
+                    },
                   ),
                   _buildModernCategoryCard(
                     context,
@@ -119,7 +145,12 @@ class PracticeExercises extends StatelessWidget {
                     Icons.timer_outlined,
                     const Color(0xFFFFEBEE),
                     const Color(0xFFF44336),
-
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DailyQuiz()),
+                      );
+                    },
                   ),
                 ],
               ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'app_colors.dart';
@@ -32,9 +33,11 @@ class _ReadingPracticeState extends State<ReadingPractice> {
   bool _isSpeaking = false;
   bool _isEvaluating = false;
   bool _speechAvailable = false;
+  bool _isRecoveringSpeech = false;
   String _transcript = '';
   Map<String, dynamic>? _evaluationResult;
   String? _errorMessage;
+  String? _lastSpeechError;
   Timer? _listenWatchdog;
 
   @override
@@ -66,28 +69,8 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     // Comme _stt est partagée entre tous les écrans, on réassigne ces
     // listeners nous-mêmes à chaque écran pour qu'ils pointent toujours
     // vers l'instance courante et pas un écran précédent déjà démonté.
-    _stt.errorListener = (error) {
-      debugPrint('speech_to_text error: ${error.errorMsg} (permanent: ${error.permanent})');
-      _cancelWatchdog();
-      if (!mounted) return;
-      setState(() => _isListening = false);
-      if (error.errorMsg.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Speech error: ${error.errorMsg}')),
-        );
-      }
-    };
-    _stt.statusListener = (status) {
-      if (!mounted) return;
-      // iOS n'envoie pas toujours finalResult=true : on se fie aussi au statut.
-      if (status == 'done' || status == 'notListening') {
-        if (_isListening) {
-          _cancelWatchdog();
-          setState(() => _isListening = false);
-          if (_transcript.isNotEmpty) _evaluate();
-        }
-      }
-    };
+    _stt.errorListener = _handleSpeechError;
+    _stt.statusListener = _handleSpeechStatus;
 
     if (_stt.isAvailable) {
       if (mounted) setState(() => _speechAvailable = true);
@@ -99,6 +82,73 @@ class _ReadingPracticeState extends State<ReadingPractice> {
       onStatus: _stt.statusListener,
     );
     if (mounted) setState(() => _speechAvailable = available);
+  }
+
+  void _handleSpeechError(SpeechRecognitionError error) {
+    debugPrint(
+      'speech_to_text error: ${error.errorMsg} (permanent: ${error.permanent})',
+    );
+    _cancelWatchdog();
+    if (!mounted) return;
+
+    final isConnectionInterrupted =
+        error.errorMsg == 'error_speech_recognizer_connection_interrupted';
+    final isRetryable =
+        isConnectionInterrupted || error.errorMsg == 'error_client';
+
+    setState(() {
+      _isListening = false;
+      if (error.permanent && !isRetryable) _speechAvailable = false;
+    });
+
+    if (_transcript.isNotEmpty) {
+      _evaluate();
+      return;
+    }
+
+    if (isRetryable) {
+      _recoverSpeechEngine();
+    }
+
+    final message = isConnectionInterrupted
+        ? "La reconnaissance vocale s'est interrompue. Appuie encore sur le micro pour réessayer."
+        : 'Speech error: ${error.errorMsg}';
+
+    if (_lastSpeechError == message) return;
+    _lastSpeechError = message;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
+  }
+
+  void _handleSpeechStatus(String status) {
+    if (!mounted) return;
+    // iOS n'envoie pas toujours finalResult=true : on se fie aussi au statut.
+    if (status == 'done' || status == 'notListening') {
+      if (_isListening) {
+        _cancelWatchdog();
+        setState(() => _isListening = false);
+        if (_transcript.isNotEmpty) _evaluate();
+      }
+    }
+  }
+
+  Future<void> _recoverSpeechEngine() async {
+    if (_isRecoveringSpeech) return;
+    _isRecoveringSpeech = true;
+    try {
+      await _stt.cancel();
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      final available = await _stt.initialize(
+        onError: _handleSpeechError,
+        onStatus: _handleSpeechStatus,
+      );
+      if (mounted) setState(() => _speechAvailable = available);
+    } catch (_) {
+      if (mounted) setState(() => _speechAvailable = false);
+    } finally {
+      _isRecoveringSpeech = false;
+    }
   }
 
   Future<void> _loadExercise() async {
@@ -123,9 +173,18 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     // Empêche les taps multiples de lancer plusieurs sessions d'écoute en parallèle.
     if (_isListening || _isEvaluating) return;
 
+    _lastSpeechError = null;
+
+    if (!_speechAvailable) {
+      await _initSpeech();
+      if (!mounted) return;
+    }
+
     if (!_speechAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Microphone not available. Check permissions.')),
+        const SnackBar(
+          content: Text('Microphone not available. Check permissions.'),
+        ),
       );
       return;
     }
@@ -143,6 +202,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     if (_stt.isListening) {
       await _stt.cancel();
     }
+    await Future<void>.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
 
     setState(() {
@@ -164,7 +224,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
           }
         },
         listenOptions: stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.confirmation,
+          listenMode: stt.ListenMode.dictation,
           cancelOnError: true,
           partialResults: true,
           listenFor: const Duration(seconds: 30),
@@ -194,9 +254,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isListening = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Microphone error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Microphone error: $e')));
     }
   }
 
@@ -216,7 +276,10 @@ class _ReadingPracticeState extends State<ReadingPractice> {
 
     setState(() => _isEvaluating = true);
     try {
-      final result = await _apiService.evaluateExercise(widget.exerciseId, _transcript);
+      final result = await _apiService.evaluateExercise(
+        widget.exerciseId,
+        _transcript,
+      );
       if (!mounted) return;
       setState(() {
         _evaluationResult = result['result'];
@@ -226,9 +289,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isEvaluating = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Evaluation error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Evaluation error: $e')));
     }
   }
 
@@ -330,7 +393,10 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                 ),
                 child: const Text(
                   'Continue',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -413,7 +479,8 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                       child: Column(
                         children: [
                           Text(
-                            _exercise?['level']?.toString().toUpperCase() ?? 'BEGINNER',
+                            _exercise?['level']?.toString().toUpperCase() ??
+                                'BEGINNER',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -444,7 +511,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
               child: LinearProgressIndicator(
                 value: 0.3,
                 backgroundColor: Colors.white,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.logoBlue),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.logoBlue,
+                ),
                 minHeight: 8,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -501,7 +570,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _buildSmallActionButton(
-                          icon: _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                          icon: _isSpeaking
+                              ? Icons.stop_rounded
+                              : Icons.volume_up_rounded,
                           label: _isSpeaking ? 'Stop' : 'Listen',
                           onPressed: _isSpeaking ? _stopSpeaking : _speak,
                         ),
@@ -522,7 +593,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                             )
                           else
                             GestureDetector(
-                              onTap: _isListening ? _stopListening : _startListening,
+                              onTap: _isListening
+                                  ? _stopListening
+                                  : _startListening,
                               child: Lottie.asset(
                                 'assets/lotties/AI logo Foriday (1).json',
                                 height: 200,
@@ -533,8 +606,8 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                             _isEvaluating
                                 ? 'Evaluating...'
                                 : _isListening
-                                    ? 'Listening... Tap to stop'
-                                    : 'Tap the AI to record',
+                                ? 'Listening... Tap to stop'
+                                : 'Tap the AI to record',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

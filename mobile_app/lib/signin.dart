@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
-import 'dashboard.dart';
+import 'main_screen.dart';
 import 'services/auth_module.dart';
 import 'app_colors.dart';
 
@@ -45,7 +45,7 @@ class _SignInState extends State<SignIn> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => Dashboard(
+            builder: (context) => MainScreen(
               userName: user['full_name'].toString().split(' ')[0],
             ),
           ),
@@ -62,12 +62,11 @@ class _SignInState extends State<SignIn> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -96,11 +95,9 @@ class _SignInState extends State<SignIn> {
               Column(
                 children: [
                   Container(
-
-                    child: Image.asset("assets/images/logo.png",width: 300,)
+                    child: Image.asset("assets/images/logo.png", width: 300),
                   ),
                   const SizedBox(height: 12),
-
                 ],
               ),
               const SizedBox(height: 10),
@@ -116,10 +113,7 @@ class _SignInState extends State<SignIn> {
               const Text(
                 "Continue your journey to confident\nreading and learning.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textLight,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.textLight),
               ),
               const SizedBox(height: 32),
               _buildTextField(
@@ -134,7 +128,8 @@ class _SignInState extends State<SignIn> {
                 icon: Icons.lock_outline,
                 isPassword: true,
                 obscureText: _obscurePassword,
-                onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+                onToggleVisibility: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
               const SizedBox(height: 12),
               Row(
@@ -144,18 +139,31 @@ class _SignInState extends State<SignIn> {
                     children: [
                       Checkbox(
                         value: _rememberMe,
-                        onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _rememberMe = val ?? false),
                         activeColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                      const Text("Remember me", style: TextStyle(color: AppColors.textDark, fontSize: 13)),
+                      const Text(
+                        "Remember me",
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                   TextButton(
                     onPressed: () {},
                     child: const Text(
                       "Forgot Password?",
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -199,7 +207,10 @@ class _SignInState extends State<SignIn> {
                   Expanded(child: Divider()),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text("or", style: TextStyle(color: AppColors.textLight)),
+                    child: Text(
+                      "or",
+                      style: TextStyle(color: AppColors.textLight),
+                    ),
                   ),
                   Expanded(child: Divider()),
                 ],
@@ -220,11 +231,16 @@ class _SignInState extends State<SignIn> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: AppColors.textLight)),
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(color: AppColors.textLight),
+                  ),
                   GestureDetector(
                     onTap: () => Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const SignUpPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const SignUpPage(),
+                      ),
                     ),
                     child: const Text(
                       "Sign up",
@@ -261,13 +277,20 @@ class _SignInState extends State<SignIn> {
         prefixIcon: Icon(icon, color: AppColors.textLight),
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                icon: Icon(
+                  obscureText
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
                 onPressed: onToggleVisibility,
               )
             : null,
         filled: true,
         fillColor: AppColors.textFieldFill,
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 20,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: const BorderSide(color: AppColors.textFieldBorder),
@@ -297,7 +320,10 @@ class _SignInState extends State<SignIn> {
         icon: Icon(icon, color: Colors.black, size: 28),
         label: Text(
           label,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white,

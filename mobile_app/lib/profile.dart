@@ -4,7 +4,9 @@ import 'services/auth_module.dart';
 import 'signin.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, this.showBackButton = true});
+
+  final bool showBackButton;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -58,20 +60,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const SignIn(),
-        ),
+        MaterialPageRoute(builder: (context) => const SignIn()),
       );
     } catch (error) {
       print('Logout error: $error');
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -84,13 +82,15 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
 
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textDark,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: widget.showBackButton
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: AppColors.textDark,
+                ),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
 
         title: const Text(
           "Profile",
@@ -129,10 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
+                      border: Border.all(color: AppColors.primary, width: 2),
                     ),
 
                     child: const CircleAvatar(
@@ -182,10 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // LOGGED-IN USER EMAIL
             Text(
               userEmail,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textLight,
-              ),
+              style: const TextStyle(fontSize: 14, color: AppColors.textLight),
             ),
 
             const SizedBox(height: 32),
@@ -204,25 +198,13 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 32),
 
             // Menu Items
-            _buildMenuItem(
-              Icons.person_outline,
-              "Personal Info",
-            ),
+            _buildMenuItem(Icons.person_outline, "Personal Info"),
 
-            _buildMenuItem(
-              Icons.notifications_none,
-              "Notifications",
-            ),
+            _buildMenuItem(Icons.notifications_none, "Notifications"),
 
-            _buildMenuItem(
-              Icons.lock_outline,
-              "Security",
-            ),
+            _buildMenuItem(Icons.lock_outline, "Security"),
 
-            _buildMenuItem(
-              Icons.help_outline,
-              "Help Center",
-            ),
+            _buildMenuItem(Icons.help_outline, "Help Center"),
 
             const SizedBox(height: 20),
 
@@ -257,21 +239,18 @@ class _ProfilePageState extends State<ProfilePage> {
         Text(
           label,
 
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textLight,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.textLight),
         ),
       ],
     );
   }
 
   Widget _buildMenuItem(
-      IconData icon,
-      String title, {
-        bool isDestructive = false,
-        VoidCallback? onTap,
-      }) {
+    IconData icon,
+    String title, {
+    bool isDestructive = false,
+    VoidCallback? onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
 
@@ -298,9 +277,7 @@ class _ProfilePageState extends State<ProfilePage> {
           leading: Icon(
             icon,
 
-            color: isDestructive
-                ? Colors.red
-                : AppColors.primary,
+            color: isDestructive ? Colors.red : AppColors.primary,
           ),
 
           title: Text(
@@ -309,16 +286,11 @@ class _ProfilePageState extends State<ProfilePage> {
             style: TextStyle(
               fontWeight: FontWeight.w600,
 
-              color: isDestructive
-                  ? Colors.red
-                  : AppColors.textDark,
+              color: isDestructive ? Colors.red : AppColors.textDark,
             ),
           ),
 
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: AppColors.textLight,
-          ),
+          trailing: const Icon(Icons.chevron_right, color: AppColors.textLight),
 
           onTap: onTap,
         ),

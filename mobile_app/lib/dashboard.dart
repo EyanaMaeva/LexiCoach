@@ -3,7 +3,7 @@ import 'package:lottie/lottie.dart';
 import 'practice_exercises.dart';
 import 'reading_exercises_list.dart';
 import 'app_colors.dart';
-import 'profile.dart';
+import 'writing_exercises_list.dart';
 
 class Dashboard extends StatefulWidget {
   final String userName;
@@ -14,21 +14,6 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    if (index == 4) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilePage()),
-      );
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +42,11 @@ class _DashboardState extends State<Dashboard> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Lottie.asset("assets/lotties/hand wave.json", width: 40, height: 40)
+                          Lottie.asset(
+                            "assets/lotties/hand wave.json",
+                            width: 40,
+                            height: 40,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -130,7 +119,8 @@ class _DashboardState extends State<Dashboard> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         "Continue Learning",
@@ -162,10 +152,16 @@ class _DashboardState extends State<Dashboard> {
                                           ),
                                           const SizedBox(width: 8),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(12),
+                                              color: Colors.white.withOpacity(
+                                                0.2,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
                                             child: const Text(
                                               "70%",
@@ -191,8 +187,12 @@ class _DashboardState extends State<Dashboard> {
                                       child: CircularProgressIndicator(
                                         value: 0.7,
                                         strokeWidth: 10,
-                                        backgroundColor: Colors.white.withOpacity(0.2),
-                                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                        backgroundColor: Colors.white
+                                            .withOpacity(0.2),
+                                        valueColor:
+                                            const AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                         strokeCap: StrokeCap.round,
                                       ),
                                     ),
@@ -216,7 +216,9 @@ class _DashboardState extends State<Dashboard> {
                                 value: 0.7,
                                 minHeight: 8,
                                 backgroundColor: Colors.white.withOpacity(0.2),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -227,7 +229,10 @@ class _DashboardState extends State<Dashboard> {
                                 onPressed: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const ReadingExercisesList()),
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ReadingExercisesList(),
+                                    ),
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -287,7 +292,9 @@ class _DashboardState extends State<Dashboard> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const PracticeExercises()),
+                        MaterialPageRoute(
+                          builder: (context) => const PracticeExercises(),
+                        ),
                       );
                     },
                   ),
@@ -304,6 +311,14 @@ class _DashboardState extends State<Dashboard> {
                     Icons.edit_rounded,
                     const Color(0xFFFFF3E0),
                     const Color(0xFFFF9800),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WritingExercisesList(),
+                        ),
+                      );
+                    },
                   ),
                   _buildModuleCard(
                     context,
@@ -314,68 +329,22 @@ class _DashboardState extends State<Dashboard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 100), // Space for bottom nav
+              const SizedBox(height: 100), // Space for the central bottom nav
             ],
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(24),
-        height: 70,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
-              blurRadius: 30,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(0, Icons.home_rounded, "Home"),
-            _buildNavItem(1, Icons.psychology_rounded, "Practice"),
-            _buildNavItem(2, Icons.chrome_reader_mode_rounded, "Read"),
-            _buildNavItem(3, Icons.edit_note_rounded, "Write"),
-            _buildNavItem(4, Icons.person_rounded, "Profile"),
-          ],
-        ),
-      ),
-      extendBody: true,
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    bool isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppColors.primary : AppColors.textLight.withOpacity(0.5),
-            size: 28,
-          ),
-          if (isSelected)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              height: 4,
-              width: 4,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModuleCard(BuildContext context, String title, IconData icon, Color bgColor, Color iconColor, {VoidCallback? onTap}) {
+  Widget _buildModuleCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color bgColor,
+    Color iconColor, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -402,11 +371,7 @@ class _DashboardState extends State<Dashboard> {
                   color: bgColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
+                child: Icon(icon, color: iconColor, size: 24),
               ),
               Text(
                 title,

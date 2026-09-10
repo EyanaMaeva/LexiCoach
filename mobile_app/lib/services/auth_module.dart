@@ -5,11 +5,9 @@ import 'package:http/http.dart' as http;
 import '../const.dart';
 
 class AuthApiService {
-  AuthApiService({
-    http.Client? client,
-    FlutterSecureStorage? storage,
-  })  : _client = client ?? http.Client(),
-        _storage = storage ?? const FlutterSecureStorage();
+  AuthApiService({http.Client? client, FlutterSecureStorage? storage})
+    : _client = client ?? http.Client(),
+      _storage = storage ?? const FlutterSecureStorage();
 
   static const String _tokenKey = 'auth_token';
 
@@ -74,6 +72,16 @@ class AuthApiService {
     return _decodeResponse(response);
   }
 
+  Future<bool> hasSavedSession() async {
+    final token = await _storage.read(key: _tokenKey);
+
+    return token != null && token.isNotEmpty;
+  }
+
+  Future<void> clearSession() async {
+    await _storage.delete(key: _tokenKey);
+  }
+
   Future<void> logout() async {
     final response = await _client.post(
       Uri.parse('$baseUrl/auth/logout'),
@@ -81,16 +89,13 @@ class AuthApiService {
     );
 
     _decodeResponse(response);
-    await _storage.delete(key: _tokenKey);
+    await clearSession();
   }
 
   Future<Map<String, String>> _authHeaders() async {
     final token = await _storage.read(key: _tokenKey);
 
-    return {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
   }
 
   Future<void> _saveTokenFromResponse(Map<String, dynamic> data) async {

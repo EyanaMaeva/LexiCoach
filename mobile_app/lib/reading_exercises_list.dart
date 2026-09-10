@@ -4,7 +4,9 @@ import 'services/reading_api_service.dart';
 import 'reading_practice.dart';
 
 class ReadingExercisesList extends StatefulWidget {
-  const ReadingExercisesList({super.key});
+  const ReadingExercisesList({super.key, this.showBackButton = true});
+
+  final bool showBackButton;
 
   @override
   State<ReadingExercisesList> createState() => _ReadingExercisesListState();
@@ -27,13 +29,21 @@ class _ReadingExercisesListState extends State<ReadingExercisesList> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: widget.showBackButton
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textDark,
+                ),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           "Reading Exercises",
-          style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
@@ -50,9 +60,16 @@ class _ReadingExercisesListState extends State<ReadingExercisesList> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 60,
+                      color: Colors.red,
+                    ),
                     const SizedBox(height: 16),
-                    Text("Error: ${snapshot.error}", textAlign: TextAlign.center),
+                    Text(
+                      "Error: ${snapshot.error}",
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
@@ -115,18 +132,28 @@ class _ReadingExercisesListState extends State<ReadingExercisesList> {
               color: AppColors.logoBlue.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.menu_book_rounded, color: AppColors.logoBlue),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: AppColors.logoBlue,
+            ),
           ),
           title: Text(
             exercise['title'] ?? 'Untitled',
-            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.textDark, fontSize: 18),
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: AppColors.textDark,
+              fontSize: 18,
+            ),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _getLevelColor(exercise['level']).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -143,12 +170,19 @@ class _ReadingExercisesListState extends State<ReadingExercisesList> {
                 const SizedBox(width: 8),
                 Text(
                   exercise['language'] ?? 'en-US',
-                  style: const TextStyle(color: AppColors.textLight, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppColors.textLight,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
           ),
-          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textLight),
+          trailing: const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: AppColors.textLight,
+          ),
           onTap: () {
             final id = exercise['id'];
             if (id == null) return;

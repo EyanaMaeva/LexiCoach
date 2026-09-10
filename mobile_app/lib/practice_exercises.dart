@@ -8,7 +8,9 @@ import 'package:lexicoach/daily_quiz.dart';
 import 'app_colors.dart';
 
 class PracticeExercises extends StatelessWidget {
-  const PracticeExercises({super.key});
+  const PracticeExercises({super.key, this.showBackButton = true});
+
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +25,25 @@ class PracticeExercises extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
-                      shadowColor: Colors.black12,
-                    ),
+                  SizedBox(
+                    width: 48,
+                    child: showBackButton
+                        ? IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                              shadowColor: Colors.black12,
+                            ),
+                          )
+                        : null,
                   ),
                   const Column(
                     children: [
@@ -77,7 +89,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ReadingExercisesList()),
+                        MaterialPageRoute(
+                          builder: (context) => const ReadingExercisesList(),
+                        ),
                       );
                     },
                   ),
@@ -91,7 +105,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const VocabularyPractice()),
+                        MaterialPageRoute(
+                          builder: (context) => const VocabularyPractice(),
+                        ),
                       );
                     },
                   ),
@@ -105,7 +121,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SpellingPractice()),
+                        MaterialPageRoute(
+                          builder: (context) => const SpellingPractice(),
+                        ),
                       );
                     },
                   ),
@@ -120,7 +138,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ListeningPractice()),
+                        MaterialPageRoute(
+                          builder: (context) => const ListeningPractice(),
+                        ),
                       );
                     },
                   ),
@@ -134,7 +154,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const GrammarPractice()),
+                        MaterialPageRoute(
+                          builder: (context) => const GrammarPractice(),
+                        ),
                       );
                     },
                   ),
@@ -148,7 +170,9 @@ class PracticeExercises extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const DailyQuiz()),
+                        MaterialPageRoute(
+                          builder: (context) => const DailyQuiz(),
+                        ),
                       );
                     },
                   ),
@@ -176,7 +200,10 @@ class PracticeExercises extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor.withOpacity(0.4), // Subtle tint for the card
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white, width: 2), // Clean white border
+          border: Border.all(
+            color: Colors.white,
+            width: 2,
+          ), // Clean white border
           boxShadow: [
             BoxShadow(
               color: iconColor.withOpacity(0.05),

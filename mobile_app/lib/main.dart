@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lexicoach/landing.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'auth_gate.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
       ),
-      home: const LandingPage(),
+      home: const AuthGate(),
     );
   }
 }

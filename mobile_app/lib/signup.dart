@@ -58,13 +58,13 @@ class _SignUpPageState extends State<SignUpPage> {
       if (!mounted) return;
 
       if (role == 'learner') {
-        Navigator.pushReplacement(
-          context,
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => MainScreen(
               userName: user['full_name'].toString().split(' ')[0],
             ),
           ),
+          (route) => false,
         );
       } else {
         setState(() => _isLoading = false);

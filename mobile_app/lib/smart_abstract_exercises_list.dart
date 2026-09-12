@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
-import 'services/writing_api_service.dart';
-import 'writing_practice.dart';
+import 'services/smart_abstract_api_service.dart';
+import 'smart_abstract_practice.dart';
 
-class WritingExercisesList extends StatefulWidget {
-  const WritingExercisesList({super.key, this.showBackButton = true});
+class SmartAbstractExercisesList extends StatefulWidget {
+  const SmartAbstractExercisesList({super.key, this.showBackButton = true});
 
   final bool showBackButton;
 
   @override
-  State<WritingExercisesList> createState() => _WritingExercisesListState();
+  State<SmartAbstractExercisesList> createState() =>
+      _SmartAbstractExercisesListState();
 }
 
-class _WritingExercisesListState extends State<WritingExercisesList> {
-  final _apiService = WritingApiService();
+class _SmartAbstractExercisesListState
+    extends State<SmartAbstractExercisesList> {
+  final _apiService = SmartAbstractApiService();
   late Future<List<dynamic>> _exercisesFuture;
 
   @override
@@ -46,7 +48,7 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
               )
             : null,
         title: const Text(
-          'Writing Assistant',
+          'Smart Abstract',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w900,
@@ -74,7 +76,7 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
           if (exercises.isEmpty) {
             return const Center(
               child: Text(
-                'No writing exercises available yet.',
+                'No smart abstract exercise available yet.',
                 style: TextStyle(color: AppColors.textLight),
               ),
             );
@@ -84,16 +86,17 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
             children: [
               const Text(
-                'Choose a prompt',
+                'Summarize a short text',
                 style: TextStyle(
                   color: AppColors.textDark,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
+                  height: 1.15,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Write your answer and let the assistant give you a score, corrections and suggestions.',
+                'Read the source text, write the main idea, then let the assistant review your summary.',
                 style: TextStyle(
                   color: AppColors.textLight,
                   fontSize: 14,
@@ -102,7 +105,7 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
               ),
               const SizedBox(height: 24),
               ...exercises.map(
-                (exercise) => _WritingExerciseCard(exercise: exercise),
+                (exercise) => _SmartAbstractCard(exercise: exercise),
               ),
             ],
           );
@@ -112,8 +115,8 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
   }
 }
 
-class _WritingExerciseCard extends StatelessWidget {
-  const _WritingExerciseCard({required this.exercise});
+class _SmartAbstractCard extends StatelessWidget {
+  const _SmartAbstractCard({required this.exercise});
 
   final dynamic exercise;
 
@@ -124,9 +127,10 @@ class _WritingExerciseCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.textFieldBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.logoPurple.withValues(alpha: 0.05),
+            color: AppColors.logoTeal.withValues(alpha: 0.05),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -144,7 +148,8 @@ class _WritingExerciseCard extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => WritingPractice(exerciseId: id as int),
+                builder: (context) =>
+                    SmartAbstractPractice(exerciseId: id as int),
               ),
             );
           },
@@ -155,12 +160,12 @@ class _WritingExerciseCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.logoPurple.withValues(alpha: 0.10),
+                    color: AppColors.logoTeal.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Icon(
-                    Icons.edit_note_rounded,
-                    color: AppColors.logoPurple,
+                    Icons.summarize_rounded,
+                    color: AppColors.logoTeal,
                     size: 28,
                   ),
                 ),
@@ -179,7 +184,7 @@ class _WritingExerciseCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        exercise['prompt'] ?? '',
+                        exercise['source_text'] ?? '',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -194,7 +199,8 @@ class _WritingExerciseCard extends StatelessWidget {
                           _SmallPill(text: exercise['level'] ?? 'beginner'),
                           const SizedBox(width: 8),
                           _SmallPill(
-                            text: '${exercise['min_words'] ?? 20}+ words',
+                            text:
+                                '${exercise['min_words'] ?? 20}-${exercise['max_words'] ?? 60} words',
                           ),
                         ],
                       ),
@@ -257,12 +263,12 @@ class _ErrorState extends StatelessWidget {
           children: [
             Icon(
               Icons.cloud_off_rounded,
-              color: AppColors.logoPurple.withValues(alpha: 0.65),
+              color: AppColors.logoTeal.withValues(alpha: 0.65),
               size: 58,
             ),
             const SizedBox(height: 16),
             const Text(
-              'Unable to load writing exercises.',
+              'Unable to load smart abstract exercises.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDark,

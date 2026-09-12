@@ -1,32 +1,56 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
-import 'services/writing_api_service.dart';
-import 'writing_practice.dart';
+import 'reading_exercises_list.dart';
+import 'services/learner_api_service.dart';
+import 'smart_abstract_exercises_list.dart';
+import 'writing_exercises_list.dart';
 
-class WritingExercisesList extends StatefulWidget {
-  const WritingExercisesList({super.key, this.showBackButton = true});
+class LearningModesPage extends StatefulWidget {
+  const LearningModesPage({super.key, this.showBackButton = true});
 
   final bool showBackButton;
 
   @override
-  State<WritingExercisesList> createState() => _WritingExercisesListState();
+  State<LearningModesPage> createState() => _LearningModesPageState();
 }
 
-class _WritingExercisesListState extends State<WritingExercisesList> {
-  final _apiService = WritingApiService();
-  late Future<List<dynamic>> _exercisesFuture;
+class _LearningModesPageState extends State<LearningModesPage> {
+  final _apiService = LearnerApiService();
+  late Future<List<dynamic>> _modesFuture;
 
   @override
   void initState() {
     super.initState();
-    _exercisesFuture = _apiService.getExercises();
+    _modesFuture = _apiService.getLearningModes();
   }
 
   void _reload() {
     setState(() {
-      _exercisesFuture = _apiService.getExercises();
+      _modesFuture = _apiService.getLearningModes();
     });
+  }
+
+  void _openMode(dynamic mode) {
+    final slug = mode['slug']?.toString() ?? '';
+
+    Widget? page;
+    if (slug == 'reading') {
+      page = const ReadingExercisesList();
+    } else if (slug == 'writing') {
+      page = const WritingExercisesList();
+    } else if (slug == 'smart-abstract') {
+      page = const SmartAbstractExercisesList();
+    }
+
+    if (page == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This mode is coming soon.')),
+      );
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page!));
   }
 
   @override
@@ -46,7 +70,7 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
               )
             : null,
         title: const Text(
-          'Writing Assistant',
+          'Learning Modes',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w900,
@@ -54,7 +78,7 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
-        future: _exercisesFuture,
+        future: _modesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -69,12 +93,12 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
             );
           }
 
-          final exercises = snapshot.data ?? [];
+          final modes = snapshot.data ?? [];
 
-          if (exercises.isEmpty) {
+          if (modes.isEmpty) {
             return const Center(
               child: Text(
-                'No writing exercises available yet.',
+                'No learning mode available yet.',
                 style: TextStyle(color: AppColors.textLight),
               ),
             );
@@ -84,16 +108,17 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
             children: [
               const Text(
-                'Choose a prompt',
+                'Choose how you want to practice',
                 style: TextStyle(
                   color: AppColors.textDark,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
+                  height: 1.15,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Write your answer and let the assistant give you a score, corrections and suggestions.',
+                'The app loads these modules from the backend, then opens the right exercise list.',
                 style: TextStyle(
                   color: AppColors.textLight,
                   fontSize: 14,
@@ -101,8 +126,8 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
                 ),
               ),
               const SizedBox(height: 24),
-              ...exercises.map(
-                (exercise) => _WritingExerciseCard(exercise: exercise),
+              ...modes.map(
+                (mode) => _ModeCard(mode: mode, onTap: () => _openMode(mode)),
               ),
             ],
           );
@@ -112,21 +137,26 @@ class _WritingExercisesListState extends State<WritingExercisesList> {
   }
 }
 
-class _WritingExerciseCard extends StatelessWidget {
-  const _WritingExerciseCard({required this.exercise});
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({required this.mode, required this.onTap});
 
-  final dynamic exercise;
+  final dynamic mode;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final slug = mode['slug']?.toString() ?? '';
+    final style = _styleFor(slug);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: AppColors.textFieldBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.logoPurple.withValues(alpha: 0.05),
+            color: style.color.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -134,35 +164,22 @@ class _WritingExerciseCard extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            final id = exercise['id'];
-            if (id == null) return;
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WritingPractice(exerciseId: id as int),
-              ),
-            );
-          },
+          borderRadius: BorderRadius.circular(26),
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  height: 58,
+                  width: 58,
                   decoration: BoxDecoration(
-                    color: AppColors.logoPurple.withValues(alpha: 0.10),
+                    color: style.color.withValues(alpha: 0.11),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(
-                    Icons.edit_note_rounded,
-                    color: AppColors.logoPurple,
-                    size: 28,
-                  ),
+                  child: Icon(style.icon, color: style.color, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -170,7 +187,7 @@ class _WritingExerciseCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        exercise['title'] ?? 'Untitled',
+                        mode['name'] ?? 'Learning mode',
                         style: const TextStyle(
                           color: AppColors.textDark,
                           fontSize: 18,
@@ -179,24 +196,15 @@ class _WritingExerciseCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        exercise['prompt'] ?? '',
+                        mode['description'] ?? 'Practice with LexiCoach.',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: AppColors.textLight,
                           fontSize: 13,
                           height: 1.35,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          _SmallPill(text: exercise['level'] ?? 'beginner'),
-                          const SizedBox(width: 8),
-                          _SmallPill(
-                            text: '${exercise['min_words'] ?? 20}+ words',
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -214,31 +222,29 @@ class _WritingExerciseCard extends StatelessWidget {
       ),
     );
   }
+
+  _ModeStyle _styleFor(String slug) {
+    switch (slug) {
+      case 'reading':
+        return const _ModeStyle(Icons.menu_book_rounded, AppColors.logoBlue);
+      case 'writing':
+        return const _ModeStyle(Icons.edit_note_rounded, AppColors.logoPurple);
+      case 'smart-abstract':
+        return const _ModeStyle(Icons.summarize_rounded, AppColors.logoTeal);
+      default:
+        return const _ModeStyle(
+          Icons.auto_awesome_rounded,
+          AppColors.logoOrange,
+        );
+    }
+  }
 }
 
-class _SmallPill extends StatelessWidget {
-  const _SmallPill({required this.text});
+class _ModeStyle {
+  const _ModeStyle(this.icon, this.color);
 
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.logoBlue.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        text.toString().toUpperCase(),
-        style: const TextStyle(
-          color: AppColors.logoBlue,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
+  final IconData icon;
+  final Color color;
 }
 
 class _ErrorState extends StatelessWidget {
@@ -257,12 +263,12 @@ class _ErrorState extends StatelessWidget {
           children: [
             Icon(
               Icons.cloud_off_rounded,
-              color: AppColors.logoPurple.withValues(alpha: 0.65),
+              color: AppColors.primary.withValues(alpha: 0.65),
               size: 58,
             ),
             const SizedBox(height: 16),
             const Text(
-              'Unable to load writing exercises.',
+              'Unable to load learning modes.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDark,

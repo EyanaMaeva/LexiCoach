@@ -17,6 +17,7 @@ class _TutorLinkPageState extends State<TutorLinkPage> {
   final _apiService = LearnerApiService();
 
   Map<String, dynamic>? _associationCode;
+  List<dynamic> _linkedTutors = const [];
   bool _isLoading = true;
   bool _isWorking = false;
   String? _errorMessage;
@@ -29,11 +30,13 @@ class _TutorLinkPageState extends State<TutorLinkPage> {
 
   Future<void> _loadCode() async {
     try {
-      final associationCode = await _apiService.getAssociationCode();
+      final status = await _apiService.getTutorLinkStatus();
+      final tutors = status['linked_tutors'];
       if (!mounted) return;
 
       setState(() {
-        _associationCode = associationCode;
+        _associationCode = status['association_code'] as Map<String, dynamic>?;
+        _linkedTutors = tutors is List ? tutors : const [];
         _isLoading = false;
         _errorMessage = null;
       });
@@ -155,39 +158,48 @@ class _TutorLinkPageState extends State<TutorLinkPage> {
             )
           : _errorMessage != null
           ? _ErrorState(message: _errorMessage!, onRetry: _loadCode)
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
-              children: [
-                const Text(
-                  'Link with a tutor',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: _loadCode,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
+                children: [
+                  const Text(
+                    'Link with a tutor',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Generate a code and share it with your tutor. The tutor uses it to follow your progress.',
-                  style: TextStyle(
-                    color: AppColors.textLight,
-                    fontSize: 14,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Generate a code and share it with your tutor. The tutor uses it to follow your progress.',
+                    style: TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                _CodeCard(
-                  associationCode: _associationCode,
-                  isWorking: _isWorking,
-                  onGenerate: _generateCode,
-                  onRegenerate: _regenerateCode,
-                  onCancel: _cancelCode,
-                  onCopy: _copyCode,
-                ),
-                const SizedBox(height: 18),
-                const _HowItWorksCard(),
-              ],
+                  const SizedBox(height: 24),
+                  if (_linkedTutors.isNotEmpty) ...[
+                    _LinkedTutorsCard(tutors: _linkedTutors),
+                    const SizedBox(height: 18),
+                  ],
+                  _CodeCard(
+                    associationCode: _associationCode,
+                    hasLinkedTutors: _linkedTutors.isNotEmpty,
+                    isWorking: _isWorking,
+                    onGenerate: _generateCode,
+                    onRegenerate: _regenerateCode,
+                    onCancel: _cancelCode,
+                    onCopy: _copyCode,
+                  ),
+                  const SizedBox(height: 18),
+                  const _HowItWorksCard(),
+                ],
+              ),
             ),
     );
   }
@@ -196,6 +208,7 @@ class _TutorLinkPageState extends State<TutorLinkPage> {
 class _CodeCard extends StatelessWidget {
   const _CodeCard({
     required this.associationCode,
+    required this.hasLinkedTutors,
     required this.isWorking,
     required this.onGenerate,
     required this.onRegenerate,
@@ -204,6 +217,7 @@ class _CodeCard extends StatelessWidget {
   });
 
   final Map<String, dynamic>? associationCode;
+  final bool hasLinkedTutors;
   final bool isWorking;
   final VoidCallback onGenerate;
   final VoidCallback onRegenerate;
@@ -248,8 +262,8 @@ class _CodeCard extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           if (code == null || code.isEmpty) ...[
-            const Text(
-              'No active code',
+            Text(
+              hasLinkedTutors ? 'No pending code' : 'No active code',
               style: TextStyle(
                 color: AppColors.textDark,
                 fontSize: 22,
@@ -257,9 +271,11 @@ class _CodeCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Create a code when a tutor is ready to connect with this learner account.',
-              style: TextStyle(
+            Text(
+              hasLinkedTutors
+                  ? 'Your tutor is already linked. Generate a new code only if another tutor needs access.'
+                  : 'Create a code when a tutor is ready to connect with this learner account.',
+              style: const TextStyle(
                 color: AppColors.textLight,
                 height: 1.4,
                 fontWeight: FontWeight.w600,
@@ -328,6 +344,153 @@ class _CodeCard extends StatelessWidget {
               onPressed: isWorking ? null : onCancel,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkedTutorsCard extends StatelessWidget {
+  const _LinkedTutorsCard({required this.tutors});
+
+  final List<dynamic> tutors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.textFieldBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.verified_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Active tutor',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'This learner account is linked.',
+                      style: TextStyle(
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ...tutors.map((tutor) {
+            final tutorMap = tutor is Map ? tutor : const {};
+            final name = tutorMap['full_name']?.toString() ?? 'Tutor';
+            final email = tutorMap['email']?.toString() ?? '';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.textFieldBorder),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.logoBlue,
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          if (email.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              email,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.textLight,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Linked',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );

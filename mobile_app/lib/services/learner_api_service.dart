@@ -46,13 +46,18 @@ class LearnerApiService {
   }
 
   Future<Map<String, dynamic>?> getAssociationCode() async {
+    final data = await getTutorLinkStatus();
+    return data['association_code'] as Map<String, dynamic>?;
+  }
+
+  Future<Map<String, dynamic>> getTutorLinkStatus() async {
     final response = await _client.get(
       Uri.parse('$baseUrl/me/association-code'),
       headers: await _authHeaders(),
     );
 
     final data = _decodeResponse(response);
-    return data['data']['association_code'] as Map<String, dynamic>?;
+    return data['data'] as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> generateAssociationCode() async {

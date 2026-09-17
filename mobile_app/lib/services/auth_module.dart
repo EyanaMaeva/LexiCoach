@@ -24,17 +24,24 @@ class AuthApiService {
     required String email,
     required String password,
     required String passwordConfirmation,
+    String role = 'learner',
+    String? associationCode,
   }) async {
+    final body = {
+      'full_name': fullName,
+      'email': email,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+      'device_name': 'flutter-app',
+      'role': role,
+      if (associationCode != null && associationCode.isNotEmpty)
+        'association_code': associationCode,
+    };
+
     final response = await _client.post(
       Uri.parse('$baseUrl/auth/register'),
       headers: _jsonHeaders,
-      body: jsonEncode({
-        'full_name': fullName,
-        'email': email,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-        'device_name': 'flutter-app',
-      }),
+      body: jsonEncode(body),
     );
 
     final data = _decodeResponse(response);

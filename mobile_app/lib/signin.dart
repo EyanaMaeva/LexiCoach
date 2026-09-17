@@ -3,6 +3,7 @@ import 'signup.dart';
 import 'main_screen.dart';
 import 'services/auth_module.dart';
 import 'app_colors.dart';
+import 'tutor_home.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -50,8 +51,15 @@ class _SignInState extends State<SignIn> {
           ),
           (route) => false,
         );
+      } else if (role == 'tutor') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) =>
+                TutorHome(userName: user['full_name'].toString().split(' ')[0]),
+          ),
+          (route) => false,
+        );
       } else {
-        // Tutor / Admin : espace non encore implémenté
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

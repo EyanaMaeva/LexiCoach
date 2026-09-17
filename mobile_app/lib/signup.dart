@@ -3,6 +3,7 @@ import 'signin.dart';
 import 'main_screen.dart';
 import 'services/auth_module.dart';
 import 'app_colors.dart';
+import 'tutor_home.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -15,11 +16,13 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  int _selectedRoleIndex = 0;
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final associationCodeController = TextEditingController();
 
   @override
   void dispose() {
@@ -27,6 +30,7 @@ class _SignUpPageState extends State<SignUpPage> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    associationCodeController.dispose();
     super.dispose();
   }
 
@@ -37,6 +41,16 @@ class _SignUpPageState extends State<SignUpPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Passwords do not match.")));
+      return;
+    }
+
+    final role = _selectedRoleIndex == 0 ? 'learner' : 'tutor';
+    final associationCode = associationCodeController.text.trim();
+
+    if (role == 'tutor' && associationCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter the learner association code.")),
+      );
       return;
     }
 
@@ -51,13 +65,15 @@ class _SignUpPageState extends State<SignUpPage> {
         email: emailController.text.trim(),
         password: passwordController.text,
         passwordConfirmation: confirmPasswordController.text,
+        role: role,
+        associationCode: role == 'tutor' ? associationCode : null,
       );
 
       final user = response['data']['user'];
-      final role = user['role'] as String? ?? 'learner';
+      final registeredRole = user['role'] as String? ?? 'learner';
       if (!mounted) return;
 
-      if (role == 'learner') {
+      if (registeredRole == 'learner') {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => MainScreen(
@@ -67,11 +83,12 @@ class _SignUpPageState extends State<SignUpPage> {
           (route) => false,
         );
       } else {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Connected as $role. This space is coming soon.'),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) =>
+                TutorHome(userName: user['full_name'].toString().split(' ')[0]),
           ),
+          (route) => false,
         );
       }
     } catch (error) {
@@ -129,9 +146,13 @@ class _SignUpPageState extends State<SignUpPage> {
                 style: TextStyle(fontSize: 14, color: AppColors.textLight),
               ),
               const SizedBox(height: 32),
+              _buildRoleTabs(),
+              const SizedBox(height: 20),
               _buildTextField(
                 controller: nameController,
-                hint: "Full name",
+                hint: _selectedRoleIndex == 0
+                    ? "Learner full name"
+                    : "Tutor full name",
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 16),
@@ -161,6 +182,27 @@ class _SignUpPageState extends State<SignUpPage> {
                   () => _obscureConfirmPassword = !_obscureConfirmPassword,
                 ),
               ),
+              if (_selectedRoleIndex == 1) ...[
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: associationCodeController,
+                  hint: "Learner association code",
+                  icon: Icons.link_rounded,
+                  textCapitalization: TextCapitalization.characters,
+                ),
+                const SizedBox(height: 8),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Ask the learner to generate this code from Tutor Link.",
+                    style: TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -251,17 +293,81 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
+  Widget _buildRoleTabs() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.textFieldBorder),
+      ),
+      child: Row(
+        children: [
+          _buildRoleTab(index: 0, label: "Learner", icon: Icons.school_rounded),
+          _buildRoleTab(
+            index: 1,
+            label: "Tutor",
+            icon: Icons.supervisor_account_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleTab({
+    required int index,
+    required String label,
+    required IconData icon,
+  }) {
+    final isSelected = _selectedRoleIndex == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedRoleIndex = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 48,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.textLight,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
     bool obscureText = false,
+    TextCapitalization textCapitalization = TextCapitalization.none,
     VoidCallback? onToggleVisibility,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      textCapitalization: textCapitalization,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: AppColors.textLight),

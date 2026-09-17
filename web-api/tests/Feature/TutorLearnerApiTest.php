@@ -57,6 +57,27 @@ class TutorLearnerApiTest extends TestCase
             ->assertJsonPath('data.association_code.code', 'LC-123456');
     }
 
+    public function test_learner_can_see_linked_tutors_from_association_code_endpoint(): void
+    {
+        $learner = User::factory()->create();
+        $tutor = User::factory()->tutor()->create([
+            'name' => 'Teacher Paul',
+            'email' => 'teacher@example.com',
+        ]);
+
+        $tutor->learners()->attach($learner->id);
+
+        Sanctum::actingAs($learner);
+
+        $this->getJson('/api/me/association-code')
+            ->assertOk()
+            ->assertJsonPath('data.association_code', null)
+            ->assertJsonCount(1, 'data.linked_tutors')
+            ->assertJsonPath('data.linked_tutors.0.full_name', 'Teacher Paul')
+            ->assertJsonPath('data.linked_tutors.0.email', 'teacher@example.com')
+            ->assertJsonPath('data.linked_tutors.0.role', User::ROLE_TUTOR);
+    }
+
     public function test_tutor_can_link_learner_with_valid_association_code(): void
     {
         $learner = User::factory()->create([

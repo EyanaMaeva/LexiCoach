@@ -24,6 +24,7 @@ class LearnerAssociationCodeController extends Controller
                 'association_code' => $associationCode instanceof LearnerAssociationCode
                     ? $this->formatAssociationCode($associationCode)
                     : null,
+                'linked_tutors' => $this->linkedTutorsFor($user),
             ],
         ]);
     }
@@ -42,6 +43,7 @@ class LearnerAssociationCodeController extends Controller
             'message' => 'Code d association genere.',
             'data' => [
                 'association_code' => $this->formatAssociationCode($associationCode),
+                'linked_tutors' => $this->linkedTutorsFor($user),
             ],
         ], 201);
     }
@@ -58,6 +60,7 @@ class LearnerAssociationCodeController extends Controller
             'message' => 'Code d association regenere.',
             'data' => [
                 'association_code' => $this->formatAssociationCode($associationCode),
+                'linked_tutors' => $this->linkedTutorsFor($user),
             ],
         ], 201);
     }
@@ -76,6 +79,7 @@ class LearnerAssociationCodeController extends Controller
                 'association_code' => $cancelledCode instanceof LearnerAssociationCode
                     ? $this->formatAssociationCode($cancelledCode)
                     : null,
+                'linked_tutors' => $this->linkedTutorsFor($user),
             ],
         ]);
     }
@@ -145,5 +149,23 @@ class LearnerAssociationCodeController extends Controller
             'used_at' => $associationCode->used_at,
             'cancelled_at' => $associationCode->cancelled_at,
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function linkedTutorsFor(User $user): array
+    {
+        return $user->tutors()
+            ->where('role', User::ROLE_TUTOR)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $tutor): array => [
+                'id' => $tutor->id,
+                'full_name' => $tutor->name,
+                'email' => $tutor->email,
+                'role' => $tutor->role,
+            ])
+            ->all();
     }
 }

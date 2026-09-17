@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\LearnerAssociationCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -44,6 +45,12 @@ class AuthApiTest extends TestCase
 
     public function test_tutor_can_register_from_mobile_app(): void
     {
+        $learner = User::factory()->create();
+        $associationCode = LearnerAssociationCode::factory()->create([
+            'learner_id' => $learner->id,
+            'code' => 'LC-123456',
+        ]);
+
         $response = $this->postJson('/api/auth/register', [
             'full_name' => 'Teacher Paul',
             'email' => 'paul@example.com',
@@ -51,17 +58,39 @@ class AuthApiTest extends TestCase
             'password_confirmation' => 'password123',
             'device_name' => 'test-client',
             'role' => User::ROLE_TUTOR,
+            'association_code' => 'LC-123456',
         ]);
 
         $response
             ->assertCreated()
             ->assertJsonPath('data.user.role', User::ROLE_TUTOR)
+            ->assertJsonPath('data.linked_learner.id', $learner->id)
             ->assertJsonPath('data.token.type', 'Bearer');
 
         $this->assertDatabaseHas('users', [
             'email' => 'paul@example.com',
             'role' => User::ROLE_TUTOR,
         ]);
+
+        $this->assertDatabaseHas('tutor_learners', [
+            'tutor_id' => User::query()->where('email', 'paul@example.com')->firstOrFail()->id,
+            'learner_id' => $learner->id,
+        ]);
+        $this->assertNotNull($associationCode->fresh()?->used_at);
+    }
+
+    public function test_tutor_registration_requires_association_code(): void
+    {
+        $this->postJson('/api/auth/register', [
+            'full_name' => 'Teacher Paul',
+            'email' => 'paul@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'device_name' => 'test-client',
+            'role' => User::ROLE_TUTOR,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['association_code']);
     }
 
     public function test_admin_cannot_register_from_public_auth_route(): void

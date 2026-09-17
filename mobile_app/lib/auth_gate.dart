@@ -4,6 +4,7 @@ import 'app_colors.dart';
 import 'landing.dart';
 import 'main_screen.dart';
 import 'services/auth_module.dart';
+import 'tutor_home.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -29,14 +30,18 @@ class _AuthGateState extends State<AuthGate> {
       final user = response['data']?['user'];
       final role = user?['role'] as String? ?? 'learner';
 
-      if (role != 'learner') {
-        await _authApi.clearSession();
-        return const LandingPage();
-      }
-
       final fullName = user?['full_name']?.toString() ?? 'User';
 
-      return MainScreen(userName: _firstNameFrom(fullName));
+      if (role == 'learner') {
+        return MainScreen(userName: _firstNameFrom(fullName));
+      }
+
+      if (role == 'tutor') {
+        return TutorHome(userName: _firstNameFrom(fullName));
+      }
+
+      await _authApi.clearSession();
+      return const LandingPage();
     } catch (_) {
       await _authApi.clearSession();
       return const LandingPage();

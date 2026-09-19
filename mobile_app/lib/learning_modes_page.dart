@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ai_conversation_page.dart';
 import 'app_colors.dart';
 import 'reading_exercises_list.dart';
 import 'services/learner_api_service.dart';
@@ -41,6 +42,8 @@ class _LearningModesPageState extends State<LearningModesPage> {
       page = const WritingExercisesList();
     } else if (slug == 'smart-abstract') {
       page = const SmartAbstractExercisesList();
+    } else if (slug == 'ai-conversation') {
+      page = const AiConversationPage();
     }
 
     if (page == null) {
@@ -94,13 +97,43 @@ class _LearningModesPageState extends State<LearningModesPage> {
           }
 
           final modes = snapshot.data ?? [];
+          final hasAiConversation = modes.any(
+            (mode) => mode['slug']?.toString() == 'ai-conversation',
+          );
 
           if (modes.isEmpty) {
-            return const Center(
-              child: Text(
-                'No learning mode available yet.',
-                style: TextStyle(color: AppColors.textLight),
-              ),
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
+              children: [
+                const Text(
+                  'Choose how you want to practice',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'The app loads these modules from the backend, then opens the right exercise list.',
+                  style: TextStyle(
+                    color: AppColors.textLight,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _ModeCard(
+                  mode: const {
+                    'name': 'AI Conversation',
+                    'slug': 'ai-conversation',
+                    'description':
+                        'Practice short voice sessions with the app timer.',
+                  },
+                  onTap: () => _openMode(const {'slug': 'ai-conversation'}),
+                ),
+              ],
             );
           }
 
@@ -126,6 +159,16 @@ class _LearningModesPageState extends State<LearningModesPage> {
                 ),
               ),
               const SizedBox(height: 24),
+              if (!hasAiConversation)
+                _ModeCard(
+                  mode: const {
+                    'name': 'AI Conversation',
+                    'slug': 'ai-conversation',
+                    'description':
+                        'Practice short voice sessions with the app timer.',
+                  },
+                  onTap: () => _openMode(const {'slug': 'ai-conversation'}),
+                ),
               ...modes.map(
                 (mode) => _ModeCard(mode: mode, onTap: () => _openMode(mode)),
               ),
@@ -231,6 +274,11 @@ class _ModeCard extends StatelessWidget {
         return const _ModeStyle(Icons.edit_note_rounded, AppColors.logoPurple);
       case 'smart-abstract':
         return const _ModeStyle(Icons.summarize_rounded, AppColors.logoTeal);
+      case 'ai-conversation':
+        return const _ModeStyle(
+          Icons.record_voice_over_rounded,
+          AppColors.primary,
+        );
       default:
         return const _ModeStyle(
           Icons.auto_awesome_rounded,

@@ -1,6 +1,6 @@
 # Module Admin Dashboard
 
-Ce module permet a un administrateur de suivre l application et de gerer les roles des utilisateurs.
+Ce module permet a un administrateur de suivre l application, de gerer les roles des utilisateurs et de modifier les limites de conversation IA.
 
 Il contient deux parties:
 
@@ -125,6 +125,18 @@ GET /api/admin/users/{user}
 
 `{user}` est l id de l utilisateur.
 
+La reponse contient aussi les limites de conversation IA:
+
+```json
+{
+  "conversation_limits": {
+    "session_limit_seconds": 180,
+    "session_limit_minutes": 3,
+    "daily_session_limit": 3
+  }
+}
+```
+
 ### Modifier le role d un utilisateur
 
 ```http
@@ -148,6 +160,32 @@ admin
 ```
 
 Regle importante: un admin ne peut pas retirer son propre role admin.
+
+### Modifier les limites de conversation IA
+
+```http
+PATCH /api/admin/users/{user}/conversation-limits
+```
+
+Body:
+
+```json
+{
+  "ai_conversation_session_limit_seconds": 180,
+  "ai_conversation_daily_session_limit": 3
+}
+```
+
+Regles:
+
+- la duree par session est en secondes;
+- la valeur par defaut est `180`, donc 3 minutes par session;
+- la duree minimum acceptee est 60 secondes;
+- la duree maximum acceptee est 3600 secondes;
+- `ai_conversation_daily_session_limit` indique combien de sessions IA le user peut lancer par jour;
+- `0` session par jour permet de bloquer temporairement la conversation IA pour ce user.
+
+Cette route prepare le futur module realtime conversation. Quand le module sera branche, le backend devra lire ces limites avant de creer une session Gemini Live.
 
 ## SPA web
 
@@ -173,6 +211,7 @@ Le parcours est volontairement separe:
 6. Le dashboard charge `GET /api/admin/users`.
 7. Le dashboard permet de filtrer les comptes.
 8. Le dashboard permet de changer le role d un utilisateur.
+9. Le dashboard permet de modifier les limites de conversation IA d un utilisateur.
 
 Si un visiteur ouvre `/admin/dashboard` sans token, la page redirige vers `/admin/login`.
 

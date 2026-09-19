@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiConversationSession;
 use App\Models\LearningMode;
 use App\Models\ReadingExercise;
 use App\Models\ReadingExerciseAttempt;
@@ -96,6 +97,24 @@ class LearningModeApiTest extends TestCase
             'is_correct' => true,
         ]);
 
+        AiConversationSession::query()->create([
+            'user_id' => $learner->id,
+            'session_limit_seconds' => 180,
+            'status' => AiConversationSession::STATUS_COMPLETED,
+            'started_at' => now()->subMinutes(5),
+            'expires_at' => now()->subMinutes(2),
+            'ended_at' => now()->subMinutes(2),
+            'assessment_score' => 78,
+            'assessment_status' => 'good',
+            'assessment_feedback' => [
+                'feedback' => [
+                    'title' => 'Good conversation!',
+                    'message' => 'Clear enough.',
+                ],
+            ],
+            'assessed_at' => now(),
+        ]);
+
         Sanctum::actingAs($learner);
 
         $this->getJson('/api/me/progress')
@@ -105,7 +124,10 @@ class LearningModeApiTest extends TestCase
             ->assertJsonPath('data.progress.reading.summary.total_attempts', 1)
             ->assertJsonPath('data.progress.reading.summary.average_score', 100)
             ->assertJsonPath('data.progress.writing.learning_mode.slug', LearningMode::SLUG_WRITING)
-            ->assertJsonPath('data.progress.writing.summary.total_attempts', 0);
+            ->assertJsonPath('data.progress.writing.summary.total_attempts', 0)
+            ->assertJsonPath('data.progress.ai-conversation.learning_mode.slug', 'ai-conversation')
+            ->assertJsonPath('data.progress.ai-conversation.summary.total_sessions', 1)
+            ->assertJsonPath('data.progress.ai-conversation.summary.average_score', 78);
     }
 
     public function test_learning_mode_routes_require_learner_role(): void

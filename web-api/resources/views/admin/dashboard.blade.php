@@ -269,7 +269,7 @@
 
             table {
                 width: 100%;
-                min-width: 720px;
+                min-width: 980px;
                 border-collapse: collapse;
                 text-align: left;
                 font-size: 14px;
@@ -370,6 +370,30 @@
                 background: var(--primary);
             }
 
+            .limit-controls {
+                display: grid;
+                grid-template-columns: minmax(88px, 1fr) minmax(88px, 1fr);
+                gap: 8px;
+                min-width: 230px;
+            }
+
+            .limit-controls label {
+                font-size: 11px;
+            }
+
+            .limit-controls input {
+                width: 100%;
+                min-height: 40px;
+                border-radius: 14px;
+                padding: 0 10px;
+            }
+
+            .limit-save {
+                grid-column: 1 / -1;
+                min-height: 40px;
+                border-radius: 14px;
+            }
+
             .empty {
                 padding: 30px 16px;
                 color: var(--muted);
@@ -452,6 +476,7 @@
                                         <th>Compte</th>
                                         <th>Role</th>
                                         <th>Activite</th>
+                                        <th>Conversation IA</th>
                                         <th>Modifier</th>
                                     </tr>
                                 </thead>
@@ -594,7 +619,12 @@
             function renderUsers(users) {
                 elements.usersEmpty.hidden = users.length !== 0;
                 elements.usersBody.innerHTML = users
-                    .map((user) => `
+                    .map((user) => {
+                        const limits = user.conversation_limits || {};
+                        const sessionMinutes = limits.session_limit_minutes || 3;
+                        const dailyLimit = limits.daily_session_limit ?? 3;
+
+                        return `
                         <tr>
                             <td>
                                 <div class="name">${escapeHtml(user.full_name)}</div>
@@ -606,6 +636,19 @@
                                 <div>${user.learners_count || 0} learners, ${user.tutors_count || 0} tutors</div>
                             </td>
                             <td>
+                                <div class="limit-controls">
+                                    <label>
+                                        Min/session
+                                        <input type="number" min="1" max="60" value="${sessionMinutes}" data-user-id="${user.id}" data-limit-field="session-minutes">
+                                    </label>
+                                    <label>
+                                        Sessions/jour
+                                        <input type="number" min="0" max="100" value="${dailyLimit}" data-user-id="${user.id}" data-limit-field="daily-limit">
+                                    </label>
+                                    <button class="button limit-save" data-user-id="${user.id}">Enregistrer</button>
+                                </div>
+                            </td>
+                            <td>
                                 <select data-user-id="${user.id}" data-current-role="${user.role}" class="role-select">
                                     <option value="learner" ${user.role === 'learner' ? 'selected' : ''}>Learner</option>
                                     <option value="tutor" ${user.role === 'tutor' ? 'selected' : ''}>Tutor</option>
@@ -613,13 +656,20 @@
                                 </select>
                             </td>
                         </tr>
-                    `)
+                    `;
+                    })
                     .join('');
 
                 document.querySelectorAll('.role-select').forEach((select) => {
                     select.addEventListener('change', async (event) => {
                         const field = event.target;
                         await updateUserRole(field.dataset.userId, field.value, field);
+                    });
+                });
+
+                document.querySelectorAll('.limit-save').forEach((button) => {
+                    button.addEventListener('click', async (event) => {
+                        await updateConversationLimits(event.target.dataset.userId, event.target);
                     });
                 });
             }
@@ -639,6 +689,40 @@
                     field.value = field.dataset.currentRole;
                     showNotice(error.message || 'Impossible de changer le role.');
                 } finally {
+                    setLoading(false);
+                }
+            }
+
+            async function updateConversationLimits(userId, button) {
+                const sessionInput = document.querySelector(`[data-user-id="${userId}"][data-limit-field="session-minutes"]`);
+                const dailyInput = document.querySelector(`[data-user-id="${userId}"][data-limit-field="daily-limit"]`);
+                const sessionMinutes = Number.parseInt(sessionInput.value, 10);
+                const dailyLimit = Number.parseInt(dailyInput.value, 10);
+
+                if (!Number.isFinite(sessionMinutes) || !Number.isFinite(dailyLimit)) {
+                    showNotice('Les limites doivent etre des nombres.');
+                    return;
+                }
+
+                setLoading(true);
+                button.disabled = true;
+                showNotice('');
+
+                try {
+                    await apiRequest(`/admin/users/${userId}/conversation-limits`, {
+                        method: 'PATCH',
+                        token,
+                        body: JSON.stringify({
+                            ai_conversation_session_limit_seconds: sessionMinutes * 60,
+                            ai_conversation_daily_session_limit: dailyLimit,
+                        }),
+                    });
+                    showNotice('Limites conversation IA mises a jour.');
+                    await loadUsers();
+                } catch (error) {
+                    showNotice(error.message || 'Impossible de modifier les limites.');
+                } finally {
+                    button.disabled = false;
                     setLoading(false);
                 }
             }

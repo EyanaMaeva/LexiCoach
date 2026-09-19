@@ -30,6 +30,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => User::ROLE_LEARNER,
+            'ai_conversation_session_limit_seconds' => 180,
+            'ai_conversation_daily_session_limit' => 3,
             'remember_token' => Str::random(10),
         ];
     }

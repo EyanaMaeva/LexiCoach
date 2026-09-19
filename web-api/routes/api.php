@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\AdminUserController;
+use App\Http\Controllers\Api\AiConversationSessionController;
 use App\Http\Controllers\Api\ApiDocumentationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GlobalProgressController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\LearnerAssociationCodeController;
 use App\Http\Controllers\Api\LearningModeController;
 use App\Http\Controllers\Api\ReadingExerciseController;
 use App\Http\Controllers\Api\ReadingProgressController;
+use App\Http\Controllers\Api\RealtimeSessionController;
 use App\Http\Controllers\Api\SmartAbstractExerciseController;
 use App\Http\Controllers\Api\SmartAbstractProgressController;
 use App\Http\Controllers\Api\TutorDashboardController;
@@ -49,6 +51,16 @@ Route::middleware(['auth:sanctum', 'role:learner'])->group(function (): void {
     Route::get('/me/smart-abstract-attempts', [SmartAbstractProgressController::class, 'attempts']);
     Route::get('/me/smart-abstract-progress', [SmartAbstractProgressController::class, 'progress']);
     Route::get('/me/progress', GlobalProgressController::class);
+    Route::post('/realtime/sessions', [RealtimeSessionController::class, 'start']);
+    Route::post('/realtime/sessions/{session}/end', [RealtimeSessionController::class, 'end']);
+    Route::post('/ai-conversations', [AiConversationSessionController::class, 'store']);
+    Route::get('/ai-conversations/{aiConversationSession}/realtime-authorize', [AiConversationSessionController::class, 'realtimeAuthorize']);
+    Route::get('/ai-conversations/{aiConversationSession}/messages', [AiConversationSessionController::class, 'messages']);
+    Route::post('/ai-conversations/{aiConversationSession}/messages', [AiConversationSessionController::class, 'storeMessage']);
+    Route::post('/ai-conversations/{aiConversationSession}/turn', [AiConversationSessionController::class, 'turn']);
+    Route::post('/ai-conversations/{aiConversationSession}/assess', [AiConversationSessionController::class, 'assess']);
+    Route::patch('/ai-conversations/{aiConversationSession}/end', [AiConversationSessionController::class, 'end']);
+    Route::patch('/ai-conversations/{aiConversationSession}/expire', [AiConversationSessionController::class, 'expire']);
     Route::get('/me/association-code', [LearnerAssociationCodeController::class, 'show']);
     Route::post('/me/association-code', [LearnerAssociationCodeController::class, 'store']);
     Route::post('/me/association-code/regenerate', [LearnerAssociationCodeController::class, 'regenerate']);
@@ -71,4 +83,5 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/users', [AdminUserController::class, 'index']);
     Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
     Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole']);
+    Route::patch('/admin/users/{user}/conversation-limits', [AdminUserController::class, 'updateConversationLimits']);
 });

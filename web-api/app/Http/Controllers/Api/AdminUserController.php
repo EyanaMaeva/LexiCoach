@@ -84,6 +84,25 @@ class AdminUserController extends Controller
         ]);
     }
 
+    public function updateConversationLimits(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'ai_conversation_session_limit_seconds' => ['required', 'integer', 'min:60', 'max:3600'],
+            'ai_conversation_daily_session_limit' => ['required', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        $user->update($validated);
+        $user->loadCount(['readingExerciseAttempts', 'learners', 'tutors']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Limites conversation IA mises a jour.',
+            'data' => [
+                'user' => $this->formatUser($user),
+            ],
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -94,6 +113,11 @@ class AdminUserController extends Controller
             'full_name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'conversation_limits' => [
+                'session_limit_seconds' => $user->ai_conversation_session_limit_seconds,
+                'session_limit_minutes' => (int) ceil($user->ai_conversation_session_limit_seconds / 60),
+                'daily_session_limit' => $user->ai_conversation_daily_session_limit,
+            ],
             'reading_attempts_count' => (int) ($user->getAttribute('reading_exercise_attempts_count') ?? 0),
             'learners_count' => (int) ($user->getAttribute('learners_count') ?? 0),
             'tutors_count' => (int) ($user->getAttribute('tutors_count') ?? 0),

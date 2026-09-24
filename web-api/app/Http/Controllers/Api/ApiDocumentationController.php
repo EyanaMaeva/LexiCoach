@@ -1463,6 +1463,11 @@ class ApiDocumentationController extends Controller
                                                 'full_name' => 'Marie Dupont',
                                                 'email' => 'marie@example.com',
                                                 'role' => 'learner',
+                                                'conversation_limits' => [
+                                                    'session_limit_seconds' => 180,
+                                                    'session_limit_minutes' => 3,
+                                                    'daily_session_limit' => 3,
+                                                ],
                                                 'reading_attempts_count' => 4,
                                                 'learners_count' => 0,
                                                 'tutors_count' => 1,
@@ -1500,6 +1505,54 @@ class ApiDocumentationController extends Controller
                                                 'full_name' => 'Marie Dupont',
                                                 'email' => 'marie@example.com',
                                                 'role' => 'tutor',
+                                                'conversation_limits' => [
+                                                    'session_limit_seconds' => 180,
+                                                    'session_limit_minutes' => 3,
+                                                    'daily_session_limit' => 3,
+                                                ],
+                                                'reading_attempts_count' => 4,
+                                                'learners_count' => 0,
+                                                'tutors_count' => 1,
+                                                'created_at' => '2026-09-03T10:00:00.000000Z',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'name' => 'Modifier les limites conversation IA',
+                            'method' => 'PATCH',
+                            'path' => '/api/admin/users/{user}/conversation-limits',
+                            'protected' => true,
+                            'description' => 'Permet a un admin de modifier la duree maximale d une session conversation IA et le nombre de sessions autorisees par jour pour un utilisateur.',
+                            'headers' => [
+                                'Accept' => 'application/json',
+                                'Content-Type' => 'application/json',
+                                'Authorization' => 'Bearer 1|exempleDeTokenSanctum',
+                            ],
+                            'request_body' => [
+                                'ai_conversation_session_limit_seconds' => 180,
+                                'ai_conversation_daily_session_limit' => 3,
+                            ],
+                            'responses' => [
+                                [
+                                    'status' => 200,
+                                    'title' => 'Succes',
+                                    'body' => [
+                                        'success' => true,
+                                        'message' => 'Limites conversation IA mises a jour.',
+                                        'data' => [
+                                            'user' => [
+                                                'id' => 2,
+                                                'full_name' => 'Marie Dupont',
+                                                'email' => 'marie@example.com',
+                                                'role' => 'learner',
+                                                'conversation_limits' => [
+                                                    'session_limit_seconds' => 180,
+                                                    'session_limit_minutes' => 3,
+                                                    'daily_session_limit' => 3,
+                                                ],
                                                 'reading_attempts_count' => 4,
                                                 'learners_count' => 0,
                                                 'tutors_count' => 1,
@@ -1541,6 +1594,7 @@ class ApiDocumentationController extends Controller
                 'Le tutor peut detacher un learner avec DELETE /api/tutor/learners/{learner}.',
                 'Pour l admin web, ouvrir /admin/login, se connecter avec un compte admin, puis la page redirige vers /admin/dashboard.',
                 'L admin peut changer un role avec PATCH /api/admin/users/{user}/role.',
+                'L admin peut modifier les limites conversation IA avec PATCH /api/admin/users/{user}/conversation-limits.',
                 'Appeler POST /api/auth/logout pour supprimer le token actuel.',
             ],
             'feature_guides' => [
@@ -1861,6 +1915,7 @@ class ApiDocumentationController extends Controller
                         'Appeler GET /api/admin/users pour remplir la table utilisateurs.',
                         'Utiliser le filtre role et la recherche pour trouver un compte.',
                         'Appeler PATCH /api/admin/users/{user}/role pour changer learner, tutor ou admin.',
+                        'Appeler PATCH /api/admin/users/{user}/conversation-limits pour modifier les limites conversation IA du compte.',
                     ],
                     'api_flow' => [
                         'POST /api/auth/login',
@@ -1868,6 +1923,7 @@ class ApiDocumentationController extends Controller
                         'GET /api/admin/dashboard',
                         'GET /api/admin/users',
                         'PATCH /api/admin/users/{user}/role',
+                        'PATCH /api/admin/users/{user}/conversation-limits',
                     ],
                     'display_rules' => [
                         'Si le compte connecte n est pas admin, afficher un message et ne pas charger les donnees admin.',
@@ -2068,10 +2124,12 @@ class ApiDocumentationController extends Controller
                         'GET /api/admin/dashboard',
                         'GET /api/admin/users',
                         'PATCH /api/admin/users/{user}/role',
+                        'PATCH /api/admin/users/{user}/conversation-limits',
                     ],
                     'backend_guarantees' => [
                         'Toutes les routes admin demandent le role admin.',
                         'Un admin ne peut pas retirer son propre role admin.',
+                        'La limite conversation IA par defaut vaut 180 secondes par session et 3 sessions par jour.',
                         'Le dashboard compte reading, writing et smart abstract.',
                     ],
                 ],

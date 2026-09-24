@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 import 'app_colors.dart';
+import 'ai_conversation_page.dart';
 import 'learning_modes_page.dart';
 import 'progress_chart_page.dart';
 import 'reading_exercises_list.dart';
@@ -57,6 +58,12 @@ class _DashboardState extends State<Dashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 122),
+        child: _RobotCoachButton(
+          onTap: () => _openPage(const AiConversationPage()),
+        ),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
@@ -201,6 +208,48 @@ class _DashboardState extends State<Dashboard> {
     if (value is int) return value;
     if (value is num) return value.round();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+}
+
+class _RobotCoachButton extends StatelessWidget {
+  const _RobotCoachButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'AI Conversation',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 86,
+          width: 86,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.18),
+              width: 1.4,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.16),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: Lottie.asset(
+              'assets/lotties/RobotSaludando.json',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

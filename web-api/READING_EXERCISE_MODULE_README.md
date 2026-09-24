@@ -133,11 +133,41 @@ L utilisatrice appuie sur le bouton micro et lit la phrase a voix haute.
 Ce que le frontend doit faire:
 
 1. Demander la permission microphone.
-2. Utiliser le package `speech_to_text`.
-3. Utiliser `exercise.language` pour la reconnaissance vocale.
-4. Afficher un etat `Listening...` pendant que le micro ecoute.
-5. Afficher le texte reconnu dans la zone `You said`.
-6. Garder le transcript final en memoire.
+2. Utiliser le service Flutter `SpeechCaptureService`.
+3. Le service utilise le package `speech_to_text`.
+4. Utiliser `exercise.language` pour la reconnaissance vocale.
+5. Afficher un etat `Listening...` pendant que le micro ecoute.
+6. Afficher le texte reconnu dans la zone `You said`.
+7. Garder le meilleur transcript final en memoire.
+
+Pourquoi on passe par `SpeechCaptureService`:
+
+- le moteur vocal natif peut couper la connexion;
+- les resultats peuvent arriver en plusieurs morceaux;
+- iOS ne renvoie pas toujours `finalResult`;
+- le service garde le meilleur transcript recu;
+- le service attend une petite garde avant d envoyer l evaluation;
+- le service evite de perdre la phrase si une erreur arrive apres quelques mots.
+
+Le frontend ne doit pas lancer directement toute la logique dans la page.
+La page doit seulement appeler:
+
+```dart
+await speechCapture.start(
+  localeId: exercise.language,
+  listenFor: const Duration(seconds: 45),
+  pauseFor: const Duration(seconds: 4),
+);
+```
+
+Puis attendre les callbacks:
+
+```text
+onListeningChanged -> changer l etat du bouton micro
+onTranscript        -> afficher le texte reconnu
+onCompleted         -> appeler l API d evaluation
+onError             -> afficher un message simple
+```
 
 Exemple:
 

@@ -4,6 +4,7 @@ namespace App\Services\Ai;
 
 use App\Models\SmartAbstractExercise;
 use App\Models\WritingExercise;
+use App\Services\Ai\Conversation\ConversationControlService;
 use InvalidArgumentException;
 
 class AiFeedbackService
@@ -11,6 +12,7 @@ class AiFeedbackService
     public function __construct(
         private readonly FakeAiProvider $fakeAiProvider,
         private readonly GeminiAiProvider $geminiAiProvider,
+        private readonly ConversationControlService $conversationControlService,
     ) {}
 
     /**
@@ -27,6 +29,29 @@ class AiFeedbackService
     public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $summary): array
     {
         return $this->normalizeSmartAbstract($this->provider()->evaluateSmartAbstract($exercise, $summary), $summary);
+    }
+
+    /**
+     * @param  array<int, array<string, string>>  $messages
+     * @return array<string, mixed>
+     */
+    public function evaluateConversation(array $messages): array
+    {
+        return $this->normalizeConversation($this->provider()->evaluateConversation($messages));
+    }
+
+    /**
+     * @param  array<int, array<string, string>>  $messages
+     * @return array<string, mixed>
+     */
+    public function replyToConversation(array $messages): array
+    {
+        $control = $this->conversationControlService->buildControl($messages);
+        $rawReply = $this->provider()->replyToConversation($messages, $control);
+
+        return $this->normalizeConversationReply(
+            $this->conversationControlService->cleanOrFallback($rawReply, $control),
+        );
     }
 
     private function provider(): AiProvider
@@ -74,6 +99,58 @@ class AiFeedbackService
             'missing_ideas' => $this->arrayFrom($result['missing_ideas'] ?? []),
             'strengths' => $this->arrayFrom($result['strengths'] ?? []),
             'feedback' => $this->feedbackFrom($result['feedback'] ?? null, $score),
+            'raw_ai_response' => $result['raw_ai_response'] ?? $result,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
+     */
+    private function normalizeConversation(array $result): array
+    {
+        $score = $this->scoreFrom($result['score'] ?? 0);
+
+        return [
+            'score' => $score,
+            'status' => $this->statusFrom($result['status'] ?? null, $score),
+            'fluency' => $this->scoreFrom($result['fluency'] ?? $score),
+            'vocabulary' => $this->scoreFrom($result['vocabulary'] ?? $score),
+            'grammar' => $this->scoreFrom($result['grammar'] ?? $score),
+            'confidence' => $this->scoreFrom($result['confidence'] ?? $score),
+            'strengths' => $this->arrayFrom($result['strengths'] ?? []),
+            'mistakes' => $this->arrayFrom($result['mistakes'] ?? []),
+            'dyslexia_support' => $this->arrayFrom($result['dyslexia_support'] ?? []),
+            'recommended_next_step' => $this->stringFrom(
+                $result['recommended_next_step'] ?? '',
+                'Practice one short answer again.',
+            ),
+            'feedback' => $this->feedbackFrom($result['feedback'] ?? null, $score),
+            'raw_ai_response' => $result['raw_ai_response'] ?? $result,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
+     */
+    private function normalizeConversationReply(array $result): array
+    {
+        $reply = $this->stringFrom(
+            $result['reply'] ?? '',
+            'Good. Can you tell me one more thing?',
+        );
+
+        return [
+            'reply' => $reply,
+            'language' => $this->stringFrom($result['language'] ?? '', 'en-US'),
+            'intent' => $this->stringFrom($result['intent'] ?? '', 'generalConversation'),
+            'task' => $this->stringFrom($result['task'] ?? '', ''),
+            'fallback_used' => (bool) ($result['fallback_used'] ?? false),
+            'fallback_reason' => $result['fallback_reason'] ?? null,
+            'gentle_correction' => $this->stringFrom($result['gentle_correction'] ?? '', ''),
+            'encouragement' => $this->stringFrom($result['encouragement'] ?? '', 'Take your time.'),
+            'next_question' => $this->stringFrom($result['next_question'] ?? '', 'What else can you say?'),
             'raw_ai_response' => $result['raw_ai_response'] ?? $result,
         ];
     }

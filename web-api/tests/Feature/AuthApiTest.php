@@ -27,6 +27,8 @@ class AuthApiTest extends TestCase
             ->assertJsonPath('data.user.full_name', 'Marie Dupont')
             ->assertJsonPath('data.user.email', 'marie@example.com')
             ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_seconds', 180)
+            ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 3)
             ->assertJsonPath('data.token.type', 'Bearer')
             ->assertJsonStructure([
                 'data' => [
@@ -125,6 +127,8 @@ class AuthApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.full_name', 'Marie Dupont')
             ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_seconds', 180)
+            ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 3)
             ->assertJsonPath('data.token.type', 'Bearer')
             ->assertJsonStructure([
                 'data' => [
@@ -165,7 +169,10 @@ class AuthApiTest extends TestCase
             ->getJson('/api/auth/me')
             ->assertOk()
             ->assertJsonPath('data.user.email', 'marie@example.com')
-            ->assertJsonPath('data.user.role', User::ROLE_LEARNER);
+            ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_seconds', 180)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_minutes', 3)
+            ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 3);
     }
 
     public function test_authenticated_user_can_logout_current_token(): void
@@ -185,6 +192,13 @@ class AuthApiTest extends TestCase
     {
         $this->getJson('/api/auth/me')->assertUnauthorized();
         $this->postJson('/api/auth/logout')->assertUnauthorized();
+    }
+
+    public function test_api_protected_routes_do_not_redirect_to_web_login(): void
+    {
+        $this->get('/api/auth/me')
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'Unauthenticated.');
     }
 
     public function test_api_documentation_page_shows_auth_endpoints_and_json_examples(): void

@@ -82,7 +82,10 @@ class AdminApiTest extends TestCase
         $this->getJson("/api/admin/users/{$learner->id}")
             ->assertOk()
             ->assertJsonPath('data.user.full_name', 'Marie Learner')
-            ->assertJsonPath('data.user.role', User::ROLE_LEARNER);
+            ->assertJsonPath('data.user.role', User::ROLE_LEARNER)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_seconds', 180)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_minutes', 3)
+            ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 3);
 
         $this->patchJson("/api/admin/users/{$learner->id}/role", [
             'role' => User::ROLE_TUTOR,
@@ -94,6 +97,47 @@ class AdminApiTest extends TestCase
             'id' => $learner->id,
             'role' => User::ROLE_TUTOR,
         ]);
+    }
+
+    public function test_admin_can_update_user_conversation_limits(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $learner = User::factory()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/admin/users/{$learner->id}/conversation-limits", [
+            'ai_conversation_session_limit_seconds' => 300,
+            'ai_conversation_daily_session_limit' => 5,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.user.conversation_limits.session_limit_seconds', 300)
+            ->assertJsonPath('data.user.conversation_limits.session_limit_minutes', 5)
+            ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 5);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $learner->id,
+            'ai_conversation_session_limit_seconds' => 300,
+            'ai_conversation_daily_session_limit' => 5,
+        ]);
+    }
+
+    public function test_admin_conversation_limits_are_validated(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $learner = User::factory()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/admin/users/{$learner->id}/conversation-limits", [
+            'ai_conversation_session_limit_seconds' => 30,
+            'ai_conversation_daily_session_limit' => 101,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'ai_conversation_session_limit_seconds',
+                'ai_conversation_daily_session_limit',
+            ]);
     }
 
     public function test_admin_cannot_remove_own_admin_role(): void
@@ -119,6 +163,10 @@ class AdminApiTest extends TestCase
 
         Sanctum::actingAs($tutor);
         $this->getJson('/api/admin/users')->assertForbidden();
+        $this->patchJson("/api/admin/users/{$learner->id}/conversation-limits", [
+            'ai_conversation_session_limit_seconds' => 300,
+            'ai_conversation_daily_session_limit' => 5,
+        ])->assertForbidden();
     }
 
     public function test_admin_login_and_dashboard_pages_load(): void

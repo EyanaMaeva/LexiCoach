@@ -21,11 +21,20 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
+ * @property int $ai_conversation_session_limit_seconds
+ * @property int $ai_conversation_daily_session_limit
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+    'role',
+    'ai_conversation_session_limit_seconds',
+    'ai_conversation_daily_session_limit',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -75,6 +84,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<AiConversationSession, $this>
+     */
+    public function aiConversationSessions(): HasMany
+    {
+        return $this->hasMany(AiConversationSession::class);
+    }
+
+    /**
      * @return HasMany<LearnerAssociationCode, $this>
      */
     public function learnerAssociationCodes(): HasMany
@@ -114,6 +131,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'ai_conversation_session_limit_seconds' => 'integer',
+            'ai_conversation_daily_session_limit' => 'integer',
         ];
     }
 }

@@ -8,7 +8,8 @@
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
-        "types:check": "tsc --noEmit"
+        "types:check": "tsc --noEmit",
+        "realtime:gemini": "node realtime/gemini-live-proxy.mjs"
     },
     "dependencies": {
         "@inertiajs/react": "^3.0.0",
@@ -25,7 +26,8 @@
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
         "typescript": "^5.7.2",
-        "vite": "^8.0.0"
+        "vite": "^8.0.0",
+        "ws": "^8.18.3"
     },
     "devDependencies": {
         "@laravel/vite-plugin-wayfinder": "^0.1.3",

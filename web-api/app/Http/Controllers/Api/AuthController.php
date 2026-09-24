@@ -45,6 +45,8 @@ class AuthController extends Controller
                 ]);
             }
 
+            $user->refresh();
+
             return $user;
         });
 
@@ -125,6 +127,11 @@ class AuthController extends Controller
             'full_name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'conversation_limits' => [
+                'session_limit_seconds' => $user->ai_conversation_session_limit_seconds,
+                'session_limit_minutes' => (int) ceil($user->ai_conversation_session_limit_seconds / 60),
+                'daily_session_limit' => $user->ai_conversation_daily_session_limit,
+            ],
             'email_verified_at' => $user->email_verified_at,
             'created_at' => $user->created_at,
         ];

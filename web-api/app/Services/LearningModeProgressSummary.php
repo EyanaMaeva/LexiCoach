@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AiConversationSession;
 use App\Models\LearningMode;
 use App\Models\User;
 
@@ -32,6 +33,15 @@ class LearningModeProgressSummary
             ];
         }
 
+        $progress['ai-conversation'] = [
+            'learning_mode' => [
+                'id' => null,
+                'name' => 'AI Conversation',
+                'slug' => 'ai-conversation',
+            ],
+            'summary' => $this->conversationSummaryFor($user),
+        ];
+
         return $progress;
     }
 
@@ -57,6 +67,30 @@ class LearningModeProgressSummary
             'id' => $mode->id,
             'name' => $mode->name,
             'slug' => $mode->slug,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function conversationSummaryFor(User $user): array
+    {
+        $query = AiConversationSession::query()->whereBelongsTo($user);
+        $assessedQuery = (clone $query)->whereNotNull('assessment_score');
+        $latest = (clone $assessedQuery)->latest('assessed_at')->first();
+
+        return [
+            'total_sessions' => (clone $query)->count(),
+            'assessed_sessions' => (clone $assessedQuery)->count(),
+            'average_score' => (int) round((float) ((clone $assessedQuery)->avg('assessment_score') ?? 0)),
+            'best_score' => (int) ((clone $assessedQuery)->max('assessment_score') ?? 0),
+            'latest_assessment' => $latest instanceof AiConversationSession ? [
+                'id' => $latest->id,
+                'score' => $latest->assessment_score,
+                'status' => $latest->assessment_status,
+                'feedback' => $latest->assessment_feedback,
+                'assessed_at' => $latest->assessed_at,
+            ] : null,
         ];
     }
 }

@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:speech_to_text/speech_recognition_error.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'app_colors.dart';
 import 'services/reading_api_service.dart';
+import 'services/speech_capture_service.dart';
 
 class ReadingPractice extends StatefulWidget {
   final int exerciseId;
@@ -17,15 +14,10 @@ class ReadingPractice extends StatefulWidget {
 }
 
 class _ReadingPracticeState extends State<ReadingPractice> {
-  // Instances partagées pour toute l'app : le moteur de reconnaissance vocale
-  // et le TTS sont des singletons natifs côté iOS. En créer une nouvelle
-  // instance à chaque écran laisse l'ancienne encore en cours de libération
-  // (dispose() ne peut pas attendre les futures async), ce qui fait que le
-  // 2e exercice s'initialise "en apparence" mais n'écoute jamais réellement.
-  static final stt.SpeechToText _stt = stt.SpeechToText();
   static final FlutterTts _tts = FlutterTts();
 
   final _apiService = ReadingApiService();
+  late final SpeechCaptureService _speechCapture;
 
   Map<String, dynamic>? _exercise;
   bool _isLoading = true;
@@ -33,16 +25,42 @@ class _ReadingPracticeState extends State<ReadingPractice> {
   bool _isSpeaking = false;
   bool _isEvaluating = false;
   bool _speechAvailable = false;
-  bool _isRecoveringSpeech = false;
   String _transcript = '';
   Map<String, dynamic>? _evaluationResult;
   String? _errorMessage;
   String? _lastSpeechError;
-  Timer? _listenWatchdog;
 
   @override
   void initState() {
     super.initState();
+    _speechCapture = SpeechCaptureService(
+      onListeningChanged: (listening) {
+        if (!mounted) return;
+        setState(() => _isListening = listening);
+      },
+      onTranscript: (transcript) {
+        if (!mounted) return;
+        setState(() => _transcript = transcript);
+      },
+      onCompleted: (transcript) {
+        if (!mounted) return;
+        setState(() {
+          _isListening = false;
+          _transcript = transcript;
+        });
+        _evaluate();
+      },
+      onError: (message) {
+        if (!mounted || _lastSpeechError == message) return;
+        _lastSpeechError = message;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      },
+    );
     _loadExercise();
     _initSpeech();
     _tts.setCompletionHandler(() {
@@ -52,103 +70,14 @@ class _ReadingPracticeState extends State<ReadingPractice> {
 
   @override
   void dispose() {
-    _listenWatchdog?.cancel();
+    _speechCapture.dispose();
     _tts.stop();
-    _stt.cancel();
     super.dispose();
   }
 
-  void _cancelWatchdog() {
-    _listenWatchdog?.cancel();
-    _listenWatchdog = null;
-  }
-
   Future<void> _initSpeech() async {
-    // `initialize()` ne remet à jour onError/onStatus que lors du tout
-    // premier appel sur l'instance (elle renvoie tôt si déjà initialisée).
-    // Comme _stt est partagée entre tous les écrans, on réassigne ces
-    // listeners nous-mêmes à chaque écran pour qu'ils pointent toujours
-    // vers l'instance courante et pas un écran précédent déjà démonté.
-    _stt.errorListener = _handleSpeechError;
-    _stt.statusListener = _handleSpeechStatus;
-
-    if (_stt.isAvailable) {
-      if (mounted) setState(() => _speechAvailable = true);
-      return;
-    }
-
-    final available = await _stt.initialize(
-      onError: _stt.errorListener,
-      onStatus: _stt.statusListener,
-    );
+    final available = await _speechCapture.initialize();
     if (mounted) setState(() => _speechAvailable = available);
-  }
-
-  void _handleSpeechError(SpeechRecognitionError error) {
-    debugPrint(
-      'speech_to_text error: ${error.errorMsg} (permanent: ${error.permanent})',
-    );
-    _cancelWatchdog();
-    if (!mounted) return;
-
-    final isConnectionInterrupted =
-        error.errorMsg == 'error_speech_recognizer_connection_interrupted';
-    final isRetryable =
-        isConnectionInterrupted || error.errorMsg == 'error_client';
-
-    setState(() {
-      _isListening = false;
-      if (error.permanent && !isRetryable) _speechAvailable = false;
-    });
-
-    if (_transcript.isNotEmpty) {
-      _evaluate();
-      return;
-    }
-
-    if (isRetryable) {
-      _recoverSpeechEngine();
-    }
-
-    final message = isConnectionInterrupted
-        ? "La reconnaissance vocale s'est interrompue. Appuie encore sur le micro pour réessayer."
-        : 'Speech error: ${error.errorMsg}';
-
-    if (_lastSpeechError == message) return;
-    _lastSpeechError = message;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
-    );
-  }
-
-  void _handleSpeechStatus(String status) {
-    if (!mounted) return;
-    // iOS n'envoie pas toujours finalResult=true : on se fie aussi au statut.
-    if (status == 'done' || status == 'notListening') {
-      if (_isListening) {
-        _cancelWatchdog();
-        setState(() => _isListening = false);
-        if (_transcript.isNotEmpty) _evaluate();
-      }
-    }
-  }
-
-  Future<void> _recoverSpeechEngine() async {
-    if (_isRecoveringSpeech) return;
-    _isRecoveringSpeech = true;
-    try {
-      await _stt.cancel();
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      final available = await _stt.initialize(
-        onError: _handleSpeechError,
-        onStatus: _handleSpeechStatus,
-      );
-      if (mounted) setState(() => _speechAvailable = available);
-    } catch (_) {
-      if (mounted) setState(() => _speechAvailable = false);
-    } finally {
-      _isRecoveringSpeech = false;
-    }
   }
 
   Future<void> _loadExercise() async {
@@ -196,79 +125,22 @@ class _ReadingPracticeState extends State<ReadingPractice> {
       if (mounted) setState(() => _isSpeaking = false);
     }
 
-    // _stt est partagée entre les écrans : on s'assure qu'aucune session
-    // résiduelle d'un écran précédent (dispose() ne peut pas attendre son
-    // cancel()) n'est encore active avant d'en démarrer une nouvelle.
-    if (_stt.isListening) {
-      await _stt.cancel();
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 150));
-    if (!mounted) return;
-
     setState(() {
       _isListening = true;
       _evaluationResult = null;
       _transcript = '';
     });
 
-    try {
-      await _stt.listen(
-        onResult: (val) {
-          if (!mounted) return;
-          // Un résultat, même partiel, prouve que le moteur natif écoute bien.
-          _cancelWatchdog();
-          setState(() => _transcript = val.recognizedWords);
-          if (val.finalResult) {
-            setState(() => _isListening = false);
-            _evaluate();
-          }
-        },
-        listenOptions: stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.dictation,
-          cancelOnError: true,
-          partialResults: true,
-          listenFor: const Duration(seconds: 30),
-          pauseFor: const Duration(seconds: 3),
-          localeId: _exercise?['language'] ?? 'en-US',
-        ),
-      );
-
-      // Le moteur natif peut accepter la demande de listen() sans jamais
-      // produire de résultat ni d'erreur (bug connu du simulateur iOS :
-      // kAFAssistantErrorDomain Code=1101 après une 1ère utilisation).
-      // On détecte ce silence et on redonne la main à l'utilisateur.
-      _listenWatchdog = Timer(const Duration(seconds: 6), () {
-        if (!mounted || !_isListening || _transcript.isNotEmpty) return;
-        _stt.cancel();
-        setState(() => _isListening = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Le micro ne répond pas (limitation connue du simulateur iOS). "
-              "Réessaie, ou teste sur un appareil réel.",
-            ),
-            duration: Duration(seconds: 5),
-          ),
-        );
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isListening = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Microphone error: $e')));
-    }
+    await _speechCapture.start(
+      localeId: _exercise?['language'] ?? 'en-US',
+      listenFor: const Duration(seconds: 45),
+      pauseFor: const Duration(seconds: 4),
+    );
   }
 
   Future<void> _stopListening() async {
     if (!_isListening) return;
-    _cancelWatchdog();
-    try {
-      await _stt.stop();
-    } catch (_) {}
-    if (!mounted) return;
-    setState(() => _isListening = false);
-    if (_transcript.isNotEmpty) _evaluate();
+    await _speechCapture.stop();
   }
 
   Future<void> _evaluate() async {
@@ -301,10 +173,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     // Le micro et le TTS se disputent la session audio iOS : on coupe
     // toujours l'écoute avant de démarrer la lecture.
     if (_isListening) {
-      _cancelWatchdog();
-      try {
-        await _stt.stop();
-      } catch (_) {}
+      await _speechCapture.cancel();
       if (mounted) setState(() => _isListening = false);
     }
 
@@ -545,7 +414,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                         borderRadius: BorderRadius.circular(40),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.05),
+                            color: AppColors.primary.withValues(alpha: 0.05),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),

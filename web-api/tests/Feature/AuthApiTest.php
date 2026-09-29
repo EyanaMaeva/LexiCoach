@@ -175,6 +175,63 @@ class AuthApiTest extends TestCase
             ->assertJsonPath('data.user.conversation_limits.daily_session_limit', 3);
     }
 
+    public function test_authenticated_user_can_update_profile_preferences(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Marie Dupont',
+            'email' => 'marie@example.com',
+        ]);
+
+        $token = $user->createToken('test-client')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->patchJson('/api/auth/profile', [
+                'full_name' => 'Marie Updated',
+                'email' => 'marie.updated@example.com',
+                'preferred_language' => 'en',
+                'learning_level' => 'intermediate',
+                'dyslexia_font_size' => 20,
+                'dyslexia_slow_speech' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.user.full_name', 'Marie Updated')
+            ->assertJsonPath('data.user.email', 'marie.updated@example.com')
+            ->assertJsonPath('data.user.preferences.learning_level', 'intermediate')
+            ->assertJsonPath('data.user.preferences.dyslexia_font_size', 20)
+            ->assertJsonPath('data.user.preferences.dyslexia_slow_speech', true);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'Marie Updated',
+            'email' => 'marie.updated@example.com',
+            'learning_level' => 'intermediate',
+            'dyslexia_font_size' => 20,
+        ]);
+    }
+
+    public function test_authenticated_user_can_update_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password123',
+        ]);
+
+        $token = $user->createToken('test-client')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->patchJson('/api/auth/password', [
+                'current_password' => 'password123',
+                'password' => 'new-password123',
+                'password_confirmation' => 'new-password123',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'new-password123',
+        ])->assertOk();
+    }
+
     public function test_authenticated_user_can_logout_current_token(): void
     {
         $user = User::factory()->create();

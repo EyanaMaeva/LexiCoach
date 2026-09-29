@@ -79,6 +79,48 @@ class AuthApiService {
     return _decodeResponse(response);
   }
 
+  Future<Map<String, dynamic>> updateProfile({
+    required String fullName,
+    required String email,
+    required String preferredLanguage,
+    required String learningLevel,
+    required int dyslexiaFontSize,
+    required bool dyslexiaSlowSpeech,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/auth/profile'),
+      headers: await _jsonAuthHeaders(),
+      body: jsonEncode({
+        'full_name': fullName,
+        'email': email,
+        'preferred_language': preferredLanguage,
+        'learning_level': learningLevel,
+        'dyslexia_font_size': dyslexiaFontSize,
+        'dyslexia_slow_speech': dyslexiaSlowSpeech,
+      }),
+    );
+
+    return _decodeResponse(response);
+  }
+
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/auth/password'),
+      headers: await _jsonAuthHeaders(),
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    _decodeResponse(response);
+  }
+
   Future<bool> hasSavedSession() async {
     final token = await _storage.read(key: _tokenKey);
 
@@ -103,6 +145,12 @@ class AuthApiService {
     final token = await _storage.read(key: _tokenKey);
 
     return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
+  }
+
+  Future<Map<String, String>> _jsonAuthHeaders() async {
+    final headers = await _authHeaders();
+
+    return {...headers, 'Content-Type': 'application/json'};
   }
 
   Future<void> _saveTokenFromResponse(Map<String, dynamic> data) async {

@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'app_colors.dart';
 import 'ai_conversation_page.dart';
 import 'learning_modes_page.dart';
+import 'notifications_page.dart';
 import 'progress_chart_page.dart';
 import 'reading_exercises_list.dart';
 import 'services/learner_api_service.dart';
@@ -71,7 +72,10 @@ class _DashboardState extends State<Dashboard> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 88),
             children: [
-              _Header(userName: widget.userName),
+              _Header(
+                userName: widget.userName,
+                onOpenNotifications: () => _openPage(const NotificationsPage()),
+              ),
               const SizedBox(height: 26),
               FutureBuilder<Map<String, dynamic>>(
                 future: _progressFuture,
@@ -266,9 +270,10 @@ class _ProgressEntry {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.userName});
+  const _Header({required this.userName, required this.onOpenNotifications});
 
   final String userName;
+  final VoidCallback onOpenNotifications;
 
   @override
   Widget build(BuildContext context) {
@@ -310,17 +315,24 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Container(
-          height: 46,
-          width: 46,
-          decoration: BoxDecoration(
-            color: Colors.white,
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: onOpenNotifications,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.textFieldBorder),
-          ),
-          child: const Icon(
-            Icons.notifications_none_rounded,
-            color: AppColors.textDark,
+            child: Container(
+              height: 46,
+              width: 46,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.textFieldBorder),
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.textDark,
+              ),
+            ),
           ),
         ),
       ],

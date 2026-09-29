@@ -21,6 +21,10 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
+ * @property string $preferred_language
+ * @property string $learning_level
+ * @property int $dyslexia_font_size
+ * @property bool $dyslexia_slow_speech
  * @property int $ai_conversation_session_limit_seconds
  * @property int $ai_conversation_daily_session_limit
  * @property string|null $remember_token
@@ -32,6 +36,10 @@ use Laravel\Sanctum\HasApiTokens;
     'email',
     'password',
     'role',
+    'preferred_language',
+    'learning_level',
+    'dyslexia_font_size',
+    'dyslexia_slow_speech',
     'ai_conversation_session_limit_seconds',
     'ai_conversation_daily_session_limit',
 ])]
@@ -131,6 +139,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'dyslexia_font_size' => 'integer',
+            'dyslexia_slow_speech' => 'boolean',
             'ai_conversation_session_limit_seconds' => 'integer',
             'ai_conversation_daily_session_limit' => 'integer',
         ];

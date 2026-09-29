@@ -106,6 +106,63 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'preferred_language' => ['required', 'string', 'max:12'],
+            'learning_level' => ['required', 'string', Rule::in(['beginner', 'intermediate', 'advanced'])],
+            'dyslexia_font_size' => ['required', 'integer', 'min:14', 'max:26'],
+            'dyslexia_slow_speech' => ['required', 'boolean'],
+        ]);
+
+        $user->update([
+            'name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'preferred_language' => $validated['preferred_language'],
+            'learning_level' => $validated['learning_level'],
+            'dyslexia_font_size' => $validated['dyslexia_font_size'],
+            'dyslexia_slow_speech' => $validated['dyslexia_slow_speech'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil mis a jour.',
+            'data' => [
+                'user' => $this->formatUser($user->fresh()),
+            ],
+        ]);
+    }
+
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Le mot de passe actuel est incorrect.'],
+            ]);
+        }
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mot de passe mis a jour.',
+            'data' => null,
+        ]);
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -127,6 +184,12 @@ class AuthController extends Controller
             'full_name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'preferences' => [
+                'preferred_language' => $user->preferred_language,
+                'learning_level' => $user->learning_level,
+                'dyslexia_font_size' => $user->dyslexia_font_size,
+                'dyslexia_slow_speech' => $user->dyslexia_slow_speech,
+            ],
             'conversation_limits' => [
                 'session_limit_seconds' => $user->ai_conversation_session_limit_seconds,
                 'session_limit_minutes' => (int) ceil($user->ai_conversation_session_limit_seconds / 60),

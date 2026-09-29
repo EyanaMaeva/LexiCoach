@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ai_conversation_page.dart';
 import 'app_colors.dart';
 import 'dashboard.dart';
 import 'learning_modes_page.dart';
@@ -37,6 +38,13 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  void _openAiConversation() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AiConversationPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,6 +53,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: _ModernBottomNav(
         currentIndex: _currentIndex,
         onChanged: _changePage,
+        onCenterTap: _openAiConversation,
       ),
       extendBody: true,
     );
@@ -52,10 +61,15 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class _ModernBottomNav extends StatelessWidget {
-  const _ModernBottomNav({required this.currentIndex, required this.onChanged});
+  const _ModernBottomNav({
+    required this.currentIndex,
+    required this.onChanged,
+    required this.onCenterTap,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
+  final VoidCallback onCenterTap;
 
   @override
   Widget build(BuildContext context) {
@@ -124,11 +138,11 @@ class _ModernBottomNav extends StatelessWidget {
             Positioned(
               bottom: 32,
               child: GestureDetector(
-                onTap: () => onChanged(2),
+                onTap: onCenterTap,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  height: currentIndex == 2 ? 70 : 66,
-                  width: currentIndex == 2 ? 70 : 66,
+                  height: 66,
+                  width: 66,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,

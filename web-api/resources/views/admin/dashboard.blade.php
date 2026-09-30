@@ -556,6 +556,11 @@
                     renderDashboard();
                     await loadUsers();
                 } catch (error) {
+                    if (error.status === 401 || error.status === 403) {
+                        redirectToLogin();
+                        return;
+                    }
+
                     showNotice(error.message || 'Erreur API.');
                 } finally {
                     setLoading(false);
@@ -563,22 +568,31 @@
             }
 
             async function loadUsers() {
-                const params = new URLSearchParams();
-                const search = document.getElementById('search').value.trim();
-                const role = document.getElementById('role-filter').value;
+                try {
+                    const params = new URLSearchParams();
+                    const search = document.getElementById('search').value.trim();
+                    const role = document.getElementById('role-filter').value;
 
-                if (search !== '') {
-                    params.set('search', search);
+                    if (search !== '') {
+                        params.set('search', search);
+                    }
+
+                    if (role !== 'all') {
+                        params.set('role', role);
+                    }
+
+                    const query = params.toString();
+                    const path = query === '' ? '/admin/users' : `/admin/users?${query}`;
+                    const response = await apiRequest(path, { token });
+                    renderUsers(response.data.users);
+                } catch (error) {
+                    if (error.status === 401 || error.status === 403) {
+                        redirectToLogin();
+                        return;
+                    }
+
+                    showNotice(error.message || 'Erreur API.');
                 }
-
-                if (role !== 'all') {
-                    params.set('role', role);
-                }
-
-                const query = params.toString();
-                const path = query === '' ? '/admin/users' : `/admin/users?${query}`;
-                const response = await apiRequest(path, { token });
-                renderUsers(response.data.users);
             }
 
             function renderDashboard() {
@@ -743,16 +757,26 @@
                     ...options,
                     headers,
                 });
-                const payload = await response.json();
+                const contentType = response.headers.get('content-type') || '';
+                const payload = contentType.includes('application/json')
+                    ? await response.json()
+                    : { message: await response.text() };
 
                 if (!response.ok) {
                     const firstError = payload.errors
                         ? Object.values(payload.errors).flat()[0]
                         : null;
-                    throw new Error(firstError || payload.message || 'Erreur API');
+                    const error = new Error(firstError || payload.message || 'Erreur API');
+                    error.status = response.status;
+                    throw error;
                 }
 
                 return payload;
+            }
+
+            function redirectToLogin() {
+                window.localStorage.removeItem(tokenKey);
+                window.location.href = '/admin/login';
             }
 
             function metricCard(label, value, detail, icon) {

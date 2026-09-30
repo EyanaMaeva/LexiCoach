@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\SmartAbstractExerciseController;
 use App\Http\Controllers\Api\SmartAbstractProgressController;
 use App\Http\Controllers\Api\TutorDashboardController;
 use App\Http\Controllers\Api\TutorLearnerController;
+use App\Http\Controllers\Api\WordSplittingController;
 use App\Http\Controllers\Api\WritingExerciseController;
 use App\Http\Controllers\Api\WritingProgressController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,7 @@ Route::middleware(['auth:sanctum', 'role:learner'])->group(function (): void {
     Route::get('/me/smart-abstract-attempts', [SmartAbstractProgressController::class, 'attempts']);
     Route::get('/me/smart-abstract-progress', [SmartAbstractProgressController::class, 'progress']);
     Route::get('/me/progress', GlobalProgressController::class);
+    Route::post('/word-splitting/split', [WordSplittingController::class, 'split']);
     Route::post('/realtime/sessions', [RealtimeSessionController::class, 'start']);
     Route::post('/realtime/sessions/{session}/end', [RealtimeSessionController::class, 'end']);
     Route::post('/ai-conversations', [AiConversationSessionController::class, 'store']);

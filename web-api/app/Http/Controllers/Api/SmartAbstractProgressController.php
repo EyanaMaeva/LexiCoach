@@ -28,7 +28,7 @@ class SmartAbstractProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives smart abstract recuperees.',
+            'message' => 'Smart abstract attempts retrieved.',
             'data' => [
                 'attempts' => $attempts,
             ],
@@ -41,7 +41,7 @@ class SmartAbstractProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression smart abstract recuperee.',
+            'message' => 'Smart abstract progress retrieved.',
             'data' => [
                 'progress' => $this->smartAbstractProgressSummary->forUser($user),
             ],

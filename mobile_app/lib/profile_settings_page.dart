@@ -98,7 +98,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
             user['email']?.toString() ?? _emailController.text;
         _isSavingProfile = false;
       });
-      _showSnackBar('Profil mis a jour.');
+      _showSnackBar('Profile updated.');
     } catch (error) {
       if (!mounted) return;
       setState(() => _isSavingProfile = false);
@@ -124,7 +124,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       _newPasswordController.clear();
       _confirmPasswordController.clear();
       setState(() => _isSavingPassword = false);
-      _showSnackBar('Mot de passe mis a jour.');
+      _showSnackBar('Password updated.');
     } catch (error) {
       if (!mounted) return;
       setState(() => _isSavingPassword = false);
@@ -164,7 +164,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Réglages',
+          'Settings',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.w900,

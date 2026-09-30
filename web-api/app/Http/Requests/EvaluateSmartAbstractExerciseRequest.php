@@ -12,7 +12,7 @@ class EvaluateSmartAbstractExerciseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'summary' => ['required', 'string', 'min:20', 'max:10000'],
+            'document_text' => ['required', 'string', 'min:30', 'max:100000'],
         ];
     }
 }

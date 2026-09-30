@@ -34,6 +34,7 @@ class RealtimeVoiceService {
   bool _assistantSpeaking = false;
   bool _responseInProgress = false;
   bool _disposed = false;
+  bool _createResponsesForTranscripts = true;
 
   DateTime? _micMutedUntil;
   DateTime? _lastSpeechStartedAt;
@@ -71,12 +72,14 @@ class RealtimeVoiceService {
     Map<String, dynamic>? headers,
     int sampleRate = 24000,
     bool createInitialResponse = true,
+    bool createResponsesForTranscripts = true,
     bool sendSessionUpdate = false,
   }) async {
     if (_connected) return;
 
     _disposed = false;
     _sampleRate = sampleRate;
+    _createResponsesForTranscripts = createResponsesForTranscripts;
 
     final socket = await WebSocket.connect(websocketUrl, headers: headers);
     _socket = socket;
@@ -355,7 +358,9 @@ class RealtimeVoiceService {
     }
 
     onUserTranscript?.call(text);
-    createAssistantResponse();
+    if (_createResponsesForTranscripts) {
+      createAssistantResponse();
+    }
   }
 
   String? _userTranscriptRejectionReason(String text, RealtimeJson event) {

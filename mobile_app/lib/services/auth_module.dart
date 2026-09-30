@@ -168,6 +168,6 @@ class AuthApiService {
       return data;
     }
 
-    throw Exception(data['message'] ?? 'Erreur API');
+    throw Exception(data['message'] ?? 'API error');
   }
 }

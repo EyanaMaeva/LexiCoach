@@ -29,6 +29,7 @@ class SpeechCaptureService {
   bool _listening = false;
   bool _recovering = false;
   bool _completionSent = false;
+  bool _sawDoneStatus = false;
   String _bestTranscript = '';
   String _lastPartialTranscript = '';
   DateTime? _speechStartedAt;
@@ -65,6 +66,7 @@ class SpeechCaptureService {
     required String localeId,
     Duration listenFor = const Duration(seconds: 45),
     Duration pauseFor = const Duration(seconds: 4),
+    stt.ListenMode listenMode = stt.ListenMode.confirmation,
   }) async {
     if (_listening) return;
 
@@ -77,6 +79,7 @@ class SpeechCaptureService {
     _watchdog?.cancel();
     _completionDelay?.cancel();
     _completionSent = false;
+    _sawDoneStatus = false;
     _bestTranscript = '';
     _lastPartialTranscript = '';
     _speechStartedAt = null;
@@ -95,7 +98,8 @@ class SpeechCaptureService {
     try {
       await _speech.listen(
         listenOptions: stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.dictation,
+          listenMode: listenMode,
+          onDevice: false,
           cancelOnError: false,
           partialResults: true,
           listenFor: listenFor,
@@ -127,7 +131,7 @@ class SpeechCaptureService {
         _log('speech watchdog timeout without transcript');
         stop(forceComplete: false);
         onError?.call(
-          "Le micro ne répond pas. Réessaie, ou teste sur un appareil réel.",
+          "The microphone is not responding. Try again, or test on a real device.",
         );
       });
     } catch (error) {
@@ -172,6 +176,7 @@ class SpeechCaptureService {
     _log('speech status=$status listening=$_listening');
 
     if ((status == 'done' || status == 'notListening') && _listening) {
+      _sawDoneStatus = true;
       _listening = false;
       _speechStoppedAt = DateTime.now();
       onListeningChanged?.call(false);
@@ -190,10 +195,18 @@ class SpeechCaptureService {
 
     final retryable =
         error.errorMsg == 'error_speech_recognizer_connection_interrupted' ||
-        error.errorMsg == 'error_client';
+        error.errorMsg == 'error_client' ||
+        error.errorMsg.startsWith('error_unknown');
 
     if (_bestTranscript.isNotEmpty) {
       _completeIfPossible();
+      return;
+    }
+
+    if (_sawDoneStatus && error.errorMsg.startsWith('error_unknown')) {
+      onError?.call(
+        'No speech was captured. Try again, speak after the listening indicator appears, or test on a real device.',
+      );
       return;
     }
 
@@ -203,7 +216,7 @@ class SpeechCaptureService {
 
     onError?.call(
       retryable
-          ? "La reconnaissance vocale s'est interrompue. Réessaie."
+          ? "Speech recognition was interrupted. Try again."
           : 'Speech error: ${error.errorMsg}',
     );
   }

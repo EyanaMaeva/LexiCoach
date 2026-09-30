@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'app_colors.dart';
+import 'services/ai_conversation_api_service.dart';
 import 'services/reading_api_service.dart';
-import 'services/speech_capture_service.dart';
+import 'services/realtime_voice_service.dart';
 
 class ReadingPractice extends StatefulWidget {
   final int exerciseId;
@@ -17,52 +20,56 @@ class _ReadingPracticeState extends State<ReadingPractice> {
   static final FlutterTts _tts = FlutterTts();
 
   final _apiService = ReadingApiService();
-  late final SpeechCaptureService _speechCapture;
+  final _conversationApi = AiConversationApiService();
+  final _transcriptController = TextEditingController();
+  late final RealtimeVoiceService _realtimeVoice;
 
   Map<String, dynamic>? _exercise;
   bool _isLoading = true;
   bool _isListening = false;
   bool _isSpeaking = false;
   bool _isEvaluating = false;
-  bool _speechAvailable = false;
   String _transcript = '';
   Map<String, dynamic>? _evaluationResult;
   String? _errorMessage;
-  String? _lastSpeechError;
+  int? _realtimeSessionId;
 
   @override
   void initState() {
     super.initState();
-    _speechCapture = SpeechCaptureService(
-      onListeningChanged: (listening) {
-        if (!mounted) return;
-        setState(() => _isListening = listening);
+    _realtimeVoice = RealtimeVoiceService(
+      onConnected: () {
+        debugPrint('Reading realtime connected');
       },
-      onTranscript: (transcript) {
-        if (!mounted) return;
-        setState(() => _transcript = transcript);
+      onDisconnected: () {
+        debugPrint('Reading realtime disconnected');
       },
-      onCompleted: (transcript) {
+      onUserSpeechStarted: () {
         if (!mounted) return;
-        setState(() {
-          _isListening = false;
-          _transcript = transcript;
-        });
+        setState(() => _isListening = true);
+      },
+      onUserSpeechStopped: () {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+      },
+      onUserTranscript: (transcript) {
+        if (!mounted) return;
+        _setTranscript(transcript);
+        unawaited(_stopRealtimeCapture());
         _evaluate();
       },
-      onError: (message) {
-        if (!mounted || _lastSpeechError == message) return;
-        _lastSpeechError = message;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      },
+      onLog: (message) {
+        debugPrint('Reading realtime log: $message');
       },
     );
     _loadExercise();
-    _initSpeech();
     _tts.setCompletionHandler(() {
       if (mounted) setState(() => _isSpeaking = false);
     });
@@ -70,14 +77,10 @@ class _ReadingPracticeState extends State<ReadingPractice> {
 
   @override
   void dispose() {
-    _speechCapture.dispose();
+    unawaited(_realtimeVoice.dispose());
+    _transcriptController.dispose();
     _tts.stop();
     super.dispose();
-  }
-
-  Future<void> _initSpeech() async {
-    final available = await _speechCapture.initialize();
-    if (mounted) setState(() => _speechAvailable = available);
   }
 
   Future<void> _loadExercise() async {
@@ -99,27 +102,8 @@ class _ReadingPracticeState extends State<ReadingPractice> {
   }
 
   Future<void> _startListening() async {
-    // Empêche les taps multiples de lancer plusieurs sessions d'écoute en parallèle.
     if (_isListening || _isEvaluating) return;
 
-    _lastSpeechError = null;
-
-    if (!_speechAvailable) {
-      await _initSpeech();
-      if (!mounted) return;
-    }
-
-    if (!_speechAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Microphone not available. Check permissions.'),
-        ),
-      );
-      return;
-    }
-
-    // La lecture TTS et l'écoute STT se disputent la session audio iOS :
-    // on coupe toujours le TTS avant de démarrer le micro.
     if (_isSpeaking) {
       await _tts.stop();
       if (mounted) setState(() => _isSpeaking = false);
@@ -130,20 +114,72 @@ class _ReadingPracticeState extends State<ReadingPractice> {
       _evaluationResult = null;
       _transcript = '';
     });
+    _transcriptController.clear();
 
-    await _speechCapture.start(
-      localeId: _exercise?['language'] ?? 'en-US',
-      listenFor: const Duration(seconds: 45),
-      pauseFor: const Duration(seconds: 4),
-    );
+    try {
+      final data = await _conversationApi.startRealtimeSession(
+        topicName: 'Reading exercise',
+      );
+      final session = data['session'] as Map<String, dynamic>? ?? {};
+      final realtime = data['realtime'] as Map<String, dynamic>? ?? {};
+      final websocketUrl = realtime['url']?.toString();
+      final clientSecret = realtime['client_secret']?.toString();
+      final inputSampleRate = _intFrom(realtime['input_sample_rate'], 24000);
+
+      if (websocketUrl == null || websocketUrl.trim().isEmpty) {
+        throw Exception('Missing Realtime websocket URL.');
+      }
+
+      if (clientSecret == null || clientSecret.trim().isEmpty) {
+        throw Exception('Missing Realtime client secret.');
+      }
+
+      _realtimeSessionId = _intFrom(session['id'], 0);
+
+      await _realtimeVoice.start(
+        websocketUrl: websocketUrl,
+        headers: {'Authorization': 'Bearer $clientSecret'},
+        sampleRate: inputSampleRate,
+        createInitialResponse: false,
+        createResponsesForTranscripts: false,
+        sendSessionUpdate: false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isListening = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   Future<void> _stopListening() async {
     if (!_isListening) return;
-    await _speechCapture.stop();
+    await _stopRealtimeCapture();
+  }
+
+  Future<void> _stopRealtimeCapture() async {
+    final sessionId = _realtimeSessionId;
+    _realtimeSessionId = null;
+
+    await _realtimeVoice.stop();
+
+    if (sessionId != null && sessionId > 0) {
+      try {
+        await _conversationApi.endRealtimeSession(sessionId);
+      } catch (error) {
+        debugPrint('Reading realtime end session failed: $error');
+      }
+    }
+
+    if (mounted) setState(() => _isListening = false);
   }
 
   Future<void> _evaluate() async {
+    _transcript = _transcriptController.text.trim().isNotEmpty
+        ? _transcriptController.text.trim()
+        : _transcript.trim();
+
     if (_transcript.isEmpty || _isEvaluating) return;
 
     setState(() => _isEvaluating = true);
@@ -171,10 +207,9 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     if (_exercise == null || _isSpeaking) return;
 
     // Le micro et le TTS se disputent la session audio iOS : on coupe
-    // toujours l'écoute avant de démarrer la lecture.
+    // always stop listening before starting playback.
     if (_isListening) {
-      await _speechCapture.cancel();
-      if (mounted) setState(() => _isListening = false);
+      await _stopRealtimeCapture();
     }
 
     setState(() => _isSpeaking = true);
@@ -191,6 +226,26 @@ class _ReadingPracticeState extends State<ReadingPractice> {
     await _tts.stop();
     if (!mounted) return;
     setState(() => _isSpeaking = false);
+  }
+
+  void _setTranscript(String transcript) {
+    final cleaned = transcript.trim();
+    if (cleaned.isEmpty) return;
+
+    setState(() => _transcript = cleaned);
+
+    if (_transcriptController.text != cleaned) {
+      _transcriptController.value = TextEditingValue(
+        text: cleaned,
+        selection: TextSelection.collapsed(offset: cleaned.length),
+      );
+    }
+  }
+
+  int _intFrom(dynamic value, int fallback) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   void _showFeedbackModal() {
@@ -289,7 +344,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Erreur de chargement
+    // Loading error
     if (_errorMessage != null) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -454,7 +509,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                     Center(
                       child: Column(
                         children: [
-                          // Spinner d'évaluation
+                          // Evaluation spinner
                           if (_isEvaluating)
                             const Padding(
                               padding: EdgeInsets.only(bottom: 16),
@@ -483,18 +538,69 @@ class _ReadingPracticeState extends State<ReadingPractice> {
                               color: AppColors.textLight,
                             ),
                           ),
-                          if (_transcript.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: Text(
-                                '"$_transcript"',
-                                style: const TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  color: AppColors.primary,
+                          const SizedBox(height: 18),
+                          TextField(
+                            controller: _transcriptController,
+                            minLines: 2,
+                            maxLines: 4,
+                            onChanged: (value) {
+                              setState(() => _transcript = value.trim());
+                            },
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Transcript appears here. You can correct it before evaluation.',
+                              hintStyle: const TextStyle(
+                                color: AppColors.textLight,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: const BorderSide(
+                                  color: AppColors.textFieldBorder,
                                 ),
-                                textAlign: TextAlign.center,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: const BorderSide(
+                                  color: AppColors.textFieldBorder,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primary,
+                                  width: 1.4,
+                                ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton.icon(
+                              onPressed:
+                                  _isEvaluating || _transcript.trim().isEmpty
+                                  ? null
+                                  : _evaluate,
+                              icon: const Icon(Icons.check_rounded),
+                              label: const Text('Evaluate reading'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                disabledBackgroundColor: AppColors.primary
+                                    .withValues(alpha: 0.4),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

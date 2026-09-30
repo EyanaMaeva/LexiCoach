@@ -39,24 +39,21 @@ PROMPT;
     /**
      * @return array<string, mixed>
      */
-    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $summary): array
+    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $documentText): array
     {
         $prompt = <<<PROMPT
 You are LexiCoach, an educational smart summary assistant for a dyslexic learner.
-Evaluate whether the learner summary keeps the important ideas from the source text.
+Read the learner document and create a short, simple summary.
+Use clear words and keep the main ideas only.
 
 Exercise title: {$exercise->title}
 Language: {$exercise->language}
 Level: {$exercise->level}
 Instructions: {$exercise->instructions}
-Minimum words: {$exercise->min_words}
-Maximum words: {$exercise->max_words}
+Target summary length: {$exercise->min_words} to {$exercise->max_words} words.
 
-Source text:
-{$exercise->source_text}
-
-Learner summary:
-{$summary}
+Document to summarize:
+{$documentText}
 
 Return only the JSON object requested by the schema.
 PROMPT;

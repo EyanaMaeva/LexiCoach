@@ -31,7 +31,7 @@ class AiConversationSessionController extends Controller
         if ($activeSession instanceof AiConversationSession) {
             return response()->json([
                 'success' => true,
-                'message' => 'Session conversation IA active recuperee.',
+                'message' => 'Active AI conversation session retrieved.',
                 'data' => [
                     'session' => $this->formatSession($activeSession),
                     'quota' => $this->formatQuotaFor($user),
@@ -65,7 +65,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session conversation IA creee.',
+            'message' => 'AI conversation session created.',
             'data' => [
                 'session' => $this->formatSession($session),
                 'quota' => $this->formatQuotaFor($user),
@@ -91,7 +91,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session conversation IA terminee.',
+            'message' => 'AI conversation session ended.',
             'data' => [
                 'session' => $this->formatSession($aiConversationSession->fresh() ?? $aiConversationSession),
                 'quota' => $this->formatQuotaFor($user),
@@ -115,7 +115,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session realtime autorisee.',
+            'message' => 'Realtime session authorized.',
             'data' => [
                 'session' => $this->formatSession($aiConversationSession),
                 'user' => [
@@ -147,7 +147,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session conversation IA expiree.',
+            'message' => 'AI conversation session expired.',
             'data' => [
                 'session' => $this->formatSession($aiConversationSession->fresh() ?? $aiConversationSession),
                 'quota' => $this->formatQuotaFor($user),
@@ -166,7 +166,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Messages conversation IA recuperes.',
+            'message' => 'AI conversation messages retrieved.',
             'data' => [
                 'messages' => $messages,
             ],
@@ -195,7 +195,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Message conversation IA sauvegarde.',
+            'message' => 'AI conversation message saved.',
             'data' => [
                 'message' => $this->formatMessage($message),
             ],
@@ -288,7 +288,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tour de conversation IA traite.',
+            'message' => 'AI conversation turn processed.',
             'data' => [
                 'learner_message' => $this->formatMessage($learnerMessage),
                 'assistant_message' => $this->formatMessage($assistantMessage),
@@ -306,7 +306,7 @@ class AiConversationSessionController extends Controller
 
         if ($messages->where('role', AiConversationMessage::ROLE_LEARNER)->isEmpty()) {
             throw ValidationException::withMessages([
-                'messages' => ['La session ne contient pas encore de message learner a evaluer.'],
+                'messages' => ['The session does not contain any learner message to assess yet.'],
             ]);
         }
 
@@ -328,7 +328,7 @@ class AiConversationSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression conversation IA evaluee.',
+            'message' => 'AI conversation progress evaluated.',
             'data' => [
                 'session' => $this->formatSession($aiConversationSession->fresh() ?? $aiConversationSession),
                 'assessment' => $result,

@@ -16,7 +16,7 @@ class AdminDashboardController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => 'Dashboard admin recupere.',
+            'message' => 'Admin dashboard retrieved.',
             'data' => [
                 'dashboard' => $this->adminDashboardSummary->get(),
             ],

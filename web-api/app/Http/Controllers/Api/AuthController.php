@@ -56,7 +56,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Inscription reussie.',
+            'message' => 'Registration successful.',
             'data' => [
                 'user' => $this->formatUser($user),
                 'linked_learner' => $role === User::ROLE_TUTOR
@@ -79,7 +79,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Les identifiants sont incorrects.'],
+                'email' => ['The credentials are incorrect.'],
             ])->status(401);
         }
 
@@ -87,7 +87,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Connexion reussie.',
+            'message' => 'Login successful.',
             'data' => [
                 'user' => $this->formatUser($user),
                 'token' => $this->formatToken($token),
@@ -99,7 +99,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'message' => 'Utilisateur authentifie.',
+            'message' => 'Authenticated user.',
             'data' => [
                 'user' => $this->formatUser($request->user()),
             ],
@@ -130,7 +130,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Profil mis a jour.',
+            'message' => 'Profile updated.',
             'data' => [
                 'user' => $this->formatUser($user->fresh()),
             ],
@@ -148,7 +148,7 @@ class AuthController extends Controller
 
         if (! Hash::check($validated['current_password'], $user->password)) {
             throw ValidationException::withMessages([
-                'current_password' => ['Le mot de passe actuel est incorrect.'],
+                'current_password' => ['The current password is incorrect.'],
             ]);
         }
 
@@ -158,7 +158,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mot de passe mis a jour.',
+            'message' => 'Password updated.',
             'data' => null,
         ]);
     }
@@ -169,7 +169,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Deconnexion reussie.',
+            'message' => 'Logout successful.',
             'data' => null,
         ]);
     }
@@ -209,13 +209,13 @@ class AuthController extends Controller
 
         if (! $associationCode instanceof LearnerAssociationCode || ! $associationCode->isUsable()) {
             throw ValidationException::withMessages([
-                'association_code' => ['Ce code d association est invalide ou expire.'],
+                'association_code' => ['This association code is invalid or expired.'],
             ]);
         }
 
         if ($associationCode->learner->role !== User::ROLE_LEARNER) {
             throw ValidationException::withMessages([
-                'association_code' => ['Ce code n appartient pas a un learner.'],
+                'association_code' => ['This code does not belong to a learner.'],
             ]);
         }
 

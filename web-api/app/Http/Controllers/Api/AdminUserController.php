@@ -35,7 +35,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Utilisateurs recuperes.',
+            'message' => 'Users retrieved.',
             'data' => [
                 'users' => $users,
             ],
@@ -48,7 +48,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Utilisateur recupere.',
+            'message' => 'User retrieved.',
             'data' => [
                 'user' => $this->formatUser($user),
             ],
@@ -77,7 +77,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Role utilisateur mis a jour.',
+            'message' => 'User role updated.',
             'data' => [
                 'user' => $this->formatUser($user),
             ],
@@ -96,7 +96,7 @@ class AdminUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Limites conversation IA mises a jour.',
+            'message' => 'AI conversation limits updated.',
             'data' => [
                 'user' => $this->formatUser($user),
             ],

@@ -37,7 +37,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Learners du tutor recuperes.',
+            'message' => 'Tutor learners retrieved.',
             'data' => [
                 'learners' => $learners,
             ],
@@ -58,7 +58,7 @@ class TutorLearnerController extends Controller
 
         if (! $associationCode instanceof LearnerAssociationCode || ! $associationCode->isUsable()) {
             throw ValidationException::withMessages([
-                'code' => ['Ce code d association est invalide ou expire.'],
+                'code' => ['This association code is invalid or expired.'],
             ]);
         }
 
@@ -66,7 +66,7 @@ class TutorLearnerController extends Controller
 
         if ($learner->role !== User::ROLE_LEARNER) {
             throw ValidationException::withMessages([
-                'code' => ['Ce code n appartient pas a un learner.'],
+                'code' => ['This code does not belong to a learner.'],
             ]);
         }
 
@@ -77,7 +77,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Learner associe au tutor.',
+            'message' => 'Learner linked to tutor.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
             ],
@@ -91,7 +91,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression du learner recuperee.',
+            'message' => 'Learner progress retrieved.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
                 'progress' => $this->learningModeProgressSummary->forUser($learner),
@@ -113,7 +113,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives de lecture du learner recuperees.',
+            'message' => 'Learner reading attempts retrieved.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
                 'attempts' => $attempts,
@@ -135,7 +135,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives writing du learner recuperees.',
+            'message' => 'Learner writing attempts retrieved.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
                 'attempts' => $attempts,
@@ -157,7 +157,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives smart abstract du learner recuperees.',
+            'message' => 'Learner smart abstract attempts retrieved.',
             'data' => [
                 'learner' => $this->formatLearner($learner),
                 'attempts' => $attempts,
@@ -174,7 +174,7 @@ class TutorLearnerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Learner detache du tutor.',
+            'message' => 'Learner detached from tutor.',
             'data' => null,
         ]);
     }

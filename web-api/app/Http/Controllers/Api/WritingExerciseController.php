@@ -28,7 +28,7 @@ class WritingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercices writing recuperes.',
+            'message' => 'Writing exercises retrieved.',
             'data' => [
                 'exercises' => $exercises,
             ],
@@ -41,7 +41,7 @@ class WritingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercice writing recupere.',
+            'message' => 'Writing exercise retrieved.',
             'data' => [
                 'exercise' => $this->formatExercise($writingExercise),
             ],
@@ -65,7 +65,7 @@ class WritingExerciseController extends Controller
         } catch (RuntimeException $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'Service IA indisponible.',
+                'message' => 'AI service unavailable.',
                 'errors' => [
                     'ai' => [$exception->getMessage()],
                 ],
@@ -87,7 +87,7 @@ class WritingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Texte writing evalue.',
+            'message' => 'Writing text evaluated.',
             'data' => [
                 'exercise' => $this->formatExercise($writingExercise),
                 'result' => $result,

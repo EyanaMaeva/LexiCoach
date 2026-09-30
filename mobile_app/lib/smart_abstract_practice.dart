@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 import 'app_colors.dart';
 import 'services/smart_abstract_api_service.dart';
@@ -14,13 +19,14 @@ class SmartAbstractPractice extends StatefulWidget {
 
 class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
   final _apiService = SmartAbstractApiService();
-  final _summaryController = TextEditingController();
+  final _documentController = TextEditingController();
 
   Map<String, dynamic>? _exercise;
   Map<String, dynamic>? _result;
   bool _isLoading = true;
   bool _isEvaluating = false;
   String? _errorMessage;
+  String? _selectedFileName;
 
   @override
   void initState() {
@@ -30,7 +36,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
 
   @override
   void dispose() {
-    _summaryController.dispose();
+    _documentController.dispose();
     super.dispose();
   }
 
@@ -57,11 +63,11 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
   Future<void> _evaluate() async {
     if (_isEvaluating) return;
 
-    final summary = _summaryController.text.trim();
+    final documentText = _documentController.text.trim();
 
-    if (summary.isEmpty) {
+    if (documentText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Write your summary first.')),
+        const SnackBar(content: Text('Paste the document first.')),
       );
       return;
     }
@@ -71,7 +77,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     try {
       final data = await _apiService.evaluateExercise(
         id: widget.exerciseId,
-        summary: summary,
+        documentText: documentText,
       );
       if (!mounted) return;
 
@@ -89,8 +95,77 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
   }
 
+  Future<void> _pickDocument() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['txt', 'md', 'pdf'],
+      );
+
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      final extension = file.extension?.toLowerCase();
+      final content = extension == 'pdf'
+          ? await _extractPdfText(bytes, file.name)
+          : utf8.decode(bytes, allowMalformed: true);
+
+      if (content.trim().isEmpty) {
+        throw Exception('The selected file is empty.');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _selectedFileName = file.name;
+        _documentController.text = content.trim();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<String> _extractPdfText(List<int> bytes, String fileName) async {
+    await pdfrxFlutterInitialize();
+
+    final document = await PdfDocument.openData(
+      Uint8List.fromList(bytes),
+      sourceName: fileName,
+    );
+
+    try {
+      final buffer = StringBuffer();
+
+      for (final page in document.pages) {
+        final pageText = await page.loadText();
+        final text = pageText?.fullText.trim();
+
+        if (text != null && text.isNotEmpty) {
+          buffer
+            ..writeln(text)
+            ..writeln();
+        }
+      }
+
+      final extracted = buffer.toString().trim();
+
+      if (extracted.isEmpty) {
+        throw Exception(
+          'No selectable text was found in this PDF. Try a text PDF, not a scanned image.',
+        );
+      }
+
+      return extracted;
+    } finally {
+      await document.dispose();
+    }
+  }
+
   int _wordCount() {
-    final summary = _summaryController.text.trim();
+    final summary = _documentController.text.trim();
 
     if (summary.isEmpty) return 0;
 
@@ -150,10 +225,19 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
         children: [
-          _SourceTextCard(exercise: _exercise!),
+          _SourceTextCard(
+            exercise: _exercise!,
+            selectedFileName: _selectedFileName,
+            onPickFile: _pickDocument,
+            onUseSample: () {
+              _documentController.text = (_exercise?['source_text'] ?? '')
+                  .toString();
+              setState(() => _selectedFileName = null);
+            },
+          ),
           const SizedBox(height: 18),
           _SummaryInput(
-            controller: _summaryController,
+            controller: _documentController,
             wordCount: _wordCount(),
             minWords: minWords,
             maxWords: maxWords,
@@ -174,7 +258,9 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
                       ),
                     )
                   : const Icon(Icons.auto_awesome_rounded),
-              label: Text(_isEvaluating ? 'Reviewing...' : 'Review Summary'),
+              label: Text(
+                _isEvaluating ? 'Summarizing...' : 'Generate Summary',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.primary.withValues(
@@ -203,9 +289,17 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
 }
 
 class _SourceTextCard extends StatelessWidget {
-  const _SourceTextCard({required this.exercise});
+  const _SourceTextCard({
+    required this.exercise,
+    required this.selectedFileName,
+    required this.onPickFile,
+    required this.onUseSample,
+  });
 
   final Map<String, dynamic> exercise;
+  final String? selectedFileName;
+  final VoidCallback onPickFile;
+  final VoidCallback onUseSample;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +349,7 @@ class _SourceTextCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            exercise['source_text'] ?? '',
+            'Upload a PDF or paste a document. LexiCoach will turn it into a simple summary.',
             style: const TextStyle(
               color: AppColors.textDark,
               fontSize: 18,
@@ -274,6 +368,50 @@ class _SourceTextCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPickFile,
+                  icon: const Icon(Icons.upload_file_rounded),
+                  label: Text(
+                    selectedFileName == null
+                        ? 'Choose document'
+                        : selectedFileName!,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.textFieldBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              TextButton.icon(
+                onPressed: onUseSample,
+                icon: const Icon(Icons.content_paste_rounded),
+                label: const Text('Sample'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.logoTeal,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Accepted files: .pdf, .txt and .md',
+            style: TextStyle(
+              color: AppColors.textLight,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -297,6 +435,8 @@ class _SummaryInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final characterCount = controller.text.length;
+
     return TextField(
       controller: controller,
       minLines: 7,
@@ -311,11 +451,13 @@ class _SummaryInput extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
-        hintText: 'Write the main idea here...',
+        hintText: 'Paste the document text here...',
+        labelText: 'Document to summarize',
         hintStyle: const TextStyle(color: AppColors.textLight),
-        helperText: '$wordCount words - target $minWords-$maxWords words',
+        helperText:
+            '$wordCount words - $characterCount/100000 characters - summary target $minWords-$maxWords words',
         helperStyle: TextStyle(
-          color: wordCount >= minWords && wordCount <= maxWords
+          color: characterCount <= 100000
               ? AppColors.logoTeal
               : AppColors.textLight,
           fontWeight: FontWeight.w700,

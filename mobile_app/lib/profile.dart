@@ -186,7 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 32),
             _buildMenuItem(
               Icons.settings_outlined,
-              "Réglages",
+              "Settings",
               onTap: _openSettings,
             ),
             _buildMenuItem(
@@ -208,7 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 20),
             _buildMenuItem(
               Icons.logout,
-              "Déconnexion",
+              "Log out",
               isDestructive: true,
               onTap: logout,
             ),

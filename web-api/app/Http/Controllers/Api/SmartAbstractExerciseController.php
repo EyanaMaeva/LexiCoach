@@ -28,7 +28,7 @@ class SmartAbstractExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercices smart abstract recuperes.',
+            'message' => 'Smart abstract exercises retrieved.',
             'data' => [
                 'exercises' => $exercises,
             ],
@@ -41,7 +41,7 @@ class SmartAbstractExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercice smart abstract recupere.',
+            'message' => 'Smart abstract exercise retrieved.',
             'data' => [
                 'exercise' => $this->formatExercise($smartAbstractExercise),
             ],
@@ -60,12 +60,12 @@ class SmartAbstractExerciseController extends Controller
         try {
             $result = $this->aiFeedbackService->evaluateSmartAbstract(
                 exercise: $smartAbstractExercise,
-                summary: $request->validated('summary'),
+                documentText: $request->validated('document_text'),
             );
         } catch (RuntimeException $exception) {
             return response()->json([
                 'success' => false,
-                'message' => 'Service IA indisponible.',
+                'message' => 'AI service unavailable.',
                 'errors' => [
                     'ai' => [$exception->getMessage()],
                 ],
@@ -82,12 +82,15 @@ class SmartAbstractExerciseController extends Controller
             'missing_ideas' => $result['missing_ideas'],
             'strengths' => $result['strengths'],
             'feedback' => $result['feedback'],
-            'raw_ai_response' => $result['raw_ai_response'],
+            'raw_ai_response' => [
+                'document_text' => $result['document_text'],
+                'ai' => $result['raw_ai_response'],
+            ],
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Resume intelligent evalue.',
+            'message' => 'Smart abstract evaluated.',
             'data' => [
                 'exercise' => $this->formatExercise($smartAbstractExercise),
                 'result' => $result,

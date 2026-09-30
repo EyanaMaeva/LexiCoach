@@ -22,7 +22,7 @@ class GlobalProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression globale recuperee.',
+            'message' => 'Global progress retrieved.',
             'data' => [
                 'progress' => $this->learningModeProgressSummary->forUser($user),
             ],

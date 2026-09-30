@@ -73,7 +73,7 @@ class _TutorHomeState extends State<TutorHome> {
 
       if (!mounted) return;
 
-      _showSnackBar('Learner associe avec succes.');
+      _showSnackBar('Learner linked successfully.');
       await _refreshDashboard();
     } catch (error) {
       if (!mounted) return;
@@ -107,7 +107,7 @@ class _TutorHomeState extends State<TutorHome> {
 
       if (!mounted) return;
 
-      _showSnackBar('Learner detache.');
+      _showSnackBar('Learner detached.');
       await _refreshDashboard();
     } catch (error) {
       if (!mounted) return;
@@ -373,7 +373,7 @@ class _Header extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 const Text(
-                  'Suivi des learners',
+                  'Learner monitoring',
                   style: TextStyle(
                     color: AppColors.textLight,
                     fontSize: 14,
@@ -473,7 +473,7 @@ class _TutorProfileSection extends StatelessWidget {
         const SizedBox(height: 32),
         _TutorProfileMenuItem(
           icon: Icons.settings_outlined,
-          title: 'Réglages',
+          title: 'Settings',
           onTap: onOpenSettings,
         ),
         _TutorProfileMenuItem(
@@ -800,7 +800,7 @@ class _SummarySection extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 icon: Icons.auto_graph_rounded,
-                title: 'Moyenne',
+                title: 'Average',
                 value: '$averageScore%',
                 caption: 'reading',
                 color: AppColors.logoTeal,
@@ -811,9 +811,9 @@ class _SummarySection extends StatelessWidget {
         const SizedBox(height: 12),
         _WideMetricCard(
           icon: Icons.history_edu_rounded,
-          title: 'Tentatives reading',
+          title: 'Reading attempts',
           value: '$totalAttempts',
-          caption: 'Derniers exercices lus par les learners associes.',
+          caption: 'Latest reading exercises completed by linked learners.',
         ),
       ],
     );
@@ -1366,7 +1366,7 @@ class _AttentionSection extends StatelessWidget {
       return const _EmptyCard(
         icon: Icons.verified_rounded,
         title: 'Tout va bien',
-        message: 'Aucun learner ne demande une attention particuliere.',
+        message: 'No learner needs special attention.',
       );
     }
 
@@ -1377,7 +1377,7 @@ class _AttentionSection extends StatelessWidget {
           const _SectionTitle(
             icon: Icons.priority_high_rounded,
             title: 'A surveiller',
-            subtitle: 'Learners sans tentative ou avec une moyenne basse.',
+            subtitle: 'Learners with no attempts or a low average score.',
           ),
           const SizedBox(height: 14),
           ...learners.map((item) {
@@ -1389,8 +1389,8 @@ class _AttentionSection extends StatelessWidget {
             return _CompactLearnerTile(
               name: _asString(learner['full_name'], fallback: 'Learner'),
               subtitle: reason == 'no_attempts'
-                  ? 'Aucune tentative pour le moment'
-                  : 'Moyenne reading: $average%',
+                  ? 'No attempts yet'
+                  : 'Average reading: $average%',
               icon: Icons.person_search_rounded,
               color: AppColors.accent,
             );
@@ -1414,7 +1414,7 @@ class _LatestAttemptsSection extends StatelessWidget {
     if (attempts.isEmpty) {
       return const _EmptyCard(
         icon: Icons.history_rounded,
-        title: 'Pas encore de tentative',
+        title: 'No attempts yet',
         message: 'Les dernieres activites apparaitront ici.',
       );
     }
@@ -1425,7 +1425,7 @@ class _LatestAttemptsSection extends StatelessWidget {
         children: [
           const _SectionTitle(
             icon: Icons.schedule_rounded,
-            title: 'Dernieres tentatives',
+            title: 'Latest attempts',
             subtitle: 'Activite reading recente.',
           ),
           const SizedBox(height: 14),
@@ -1467,7 +1467,7 @@ class _LearnersSection extends StatelessWidget {
     if (learners.isEmpty) {
       return const _EmptyCard(
         icon: Icons.person_add_alt_1_rounded,
-        title: 'Aucun learner associe',
+        title: 'No linked learners',
         message: 'Demande au learner de generer son code puis ajoute-le ici.',
       );
     }
@@ -1479,7 +1479,7 @@ class _LearnersSection extends StatelessWidget {
           const _SectionTitle(
             icon: Icons.people_alt_rounded,
             title: 'Mes learners',
-            subtitle: 'Comptes actuellement associes a ce tutor.',
+            subtitle: 'Accounts currently linked to this tutor.',
           ),
           const SizedBox(height: 14),
           ...learners.map((item) {
@@ -1576,7 +1576,7 @@ class _LearnerTile extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () => onUnlink(learner),
-                  tooltip: 'Detacher',
+                  tooltip: 'Detach',
                   icon: const Icon(
                     Icons.link_off_rounded,
                     color: AppColors.textLight,
@@ -1689,7 +1689,7 @@ class _LearnerProgressSheetState extends State<_LearnerProgressSheet> {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              'Evolution par module',
+                              'Progress by mode',
                               style: TextStyle(
                                 color: AppColors.textLight,
                                 fontSize: 13,
@@ -1709,8 +1709,8 @@ class _LearnerProgressSheetState extends State<_LearnerProgressSheet> {
                   if (progress.isEmpty)
                     const _EmptyCard(
                       icon: Icons.insights_rounded,
-                      title: 'Aucune progression',
-                      message: 'Ce learner n a pas encore de tentatives.',
+                      title: 'No progress',
+                      message: 'This learner has no attempts yet.',
                     )
                   else
                     _TutorProgressChartSection(
@@ -1835,7 +1835,7 @@ class _AttemptsHistory extends StatelessWidget {
         if (snapshot.hasError) {
           return _EmptyCard(
             icon: Icons.cloud_off_rounded,
-            title: 'Historique indisponible',
+            title: 'History unavailable',
             message: snapshot.error.toString(),
           );
         }
@@ -1845,8 +1845,8 @@ class _AttemptsHistory extends StatelessWidget {
         if (attempts.isEmpty) {
           return const _EmptyCard(
             icon: Icons.history_rounded,
-            title: 'Aucune tentative',
-            message: 'Aucune activite trouvee pour ce module.',
+            title: 'No attempts',
+            message: 'No activity found for this mode.',
           );
         }
 
@@ -1854,7 +1854,7 @@ class _AttemptsHistory extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Historique',
+              'History',
               style: TextStyle(
                 color: AppColors.textDark,
                 fontSize: 18,
@@ -2551,7 +2551,7 @@ class _TutorErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           const Text(
-            'Dashboard indisponible',
+            'Dashboard unavailable',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textDark,
@@ -2577,7 +2577,7 @@ class _TutorErrorState extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reessayer'),
+              label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -2618,7 +2618,7 @@ class _ConfirmUnlinkSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Detacher le learner ?',
+              'Detach le learner ?',
               style: TextStyle(
                 color: AppColors.textDark,
                 fontSize: 20,
@@ -2649,7 +2649,7 @@ class _ConfirmUnlinkSheet extends StatelessWidget {
                       ),
                       textStyle: const TextStyle(fontWeight: FontWeight.w900),
                     ),
-                    child: const Text('Annuler'),
+                    child: const Text('Cancel'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -2665,7 +2665,7 @@ class _ConfirmUnlinkSheet extends StatelessWidget {
                       ),
                       textStyle: const TextStyle(fontWeight: FontWeight.w900),
                     ),
-                    child: const Text('Detacher'),
+                    child: const Text('Detach'),
                   ),
                 ),
               ],

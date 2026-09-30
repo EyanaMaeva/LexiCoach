@@ -15,7 +15,7 @@ interface AiProvider
     /**
      * @return array<string, mixed>
      */
-    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $summary): array;
+    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $documentText): array;
 
     /**
      * @param  array<int, array<string, string>>  $messages

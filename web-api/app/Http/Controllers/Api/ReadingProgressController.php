@@ -28,7 +28,7 @@ class ReadingProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives de lecture recuperees.',
+            'message' => 'Reading attempts retrieved.',
             'data' => [
                 'attempts' => $attempts,
             ],
@@ -41,7 +41,7 @@ class ReadingProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression de lecture recuperee.',
+            'message' => 'Reading progress retrieved.',
             'data' => [
                 'progress' => $this->readingProgressSummary->forUser($user),
             ],

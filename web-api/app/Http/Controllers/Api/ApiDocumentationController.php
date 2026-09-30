@@ -97,7 +97,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Inscription reussie.',
+                                        'message' => 'Registration successful.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 1,
@@ -150,7 +150,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Connexion reussie.',
+                                        'message' => 'Login successful.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 1,
@@ -197,7 +197,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Utilisateur authentifie.',
+                                        'message' => 'Authenticated user.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 1,
@@ -236,7 +236,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Deconnexion reussie.',
+                                        'message' => 'Logout successful.',
                                         'data' => null,
                                     ],
                                 ],
@@ -273,7 +273,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercices de lecture recuperes.',
+                                        'message' => 'Reading exercises retrieved.',
                                         'data' => [
                                             'exercises' => [
                                                 [
@@ -306,7 +306,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercice de lecture recupere.',
+                                        'message' => 'Reading exercise retrieved.',
                                         'data' => [
                                             'exercise' => [
                                                 'id' => 1,
@@ -347,7 +347,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Lecture evaluee.',
+                                        'message' => 'Reading evaluated.',
                                         'data' => [
                                             'exercise' => [
                                                 'id' => 1,
@@ -434,7 +434,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Modes d apprentissage recuperes.',
+                                        'message' => 'Learning modes retrieved.',
                                         'data' => [
                                             'learning_modes' => [
                                                 [
@@ -476,7 +476,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Mode d apprentissage recupere.',
+                                        'message' => 'Learning mode retrieved.',
                                         'data' => [
                                             'learning_mode' => [
                                                 'id' => 1,
@@ -508,7 +508,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercices du mode d apprentissage recuperes.',
+                                        'message' => 'Learning mode exercises retrieved.',
                                         'data' => [
                                             'learning_mode' => [
                                                 'id' => 1,
@@ -556,7 +556,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercices writing recuperes.',
+                                        'message' => 'Writing exercises retrieved.',
                                         'data' => [
                                             'exercises' => [
                                                 [
@@ -594,7 +594,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Texte writing evalue.',
+                                        'message' => 'Writing text evaluated.',
                                         'data' => [
                                             'result' => [
                                                 'score' => 82,
@@ -622,7 +622,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Service IA indisponible',
                                     'body' => [
                                         'success' => false,
-                                        'message' => 'Service IA indisponible.',
+                                        'message' => 'AI service unavailable.',
                                         'errors' => [
                                             'ai' => ['GEMINI_API_KEY is missing.'],
                                         ],
@@ -647,7 +647,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Progression writing recuperee.',
+                                        'message' => 'Writing progress retrieved.',
                                         'data' => [
                                             'progress' => [
                                                 'total_attempts' => 3,
@@ -685,7 +685,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Exercices smart abstract recuperes.',
+                                        'message' => 'Smart abstract exercises retrieved.',
                                         'data' => [
                                             'exercises' => [
                                                 [
@@ -724,7 +724,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Resume intelligent evalue.',
+                                        'message' => 'Smart abstract evaluated.',
                                         'data' => [
                                             'result' => [
                                                 'score' => 84,
@@ -766,7 +766,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Progression smart abstract recuperee.',
+                                        'message' => 'Smart abstract progress retrieved.',
                                         'data' => [
                                             'progress' => [
                                                 'total_attempts' => 2,
@@ -804,7 +804,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Tentatives de lecture recuperees.',
+                                        'message' => 'Reading attempts retrieved.',
                                         'data' => [
                                             'attempts' => [
                                                 [
@@ -856,7 +856,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Progression de lecture recuperee.',
+                                        'message' => 'Reading progress retrieved.',
                                         'data' => [
                                             'progress' => [
                                                 'total_attempts' => 8,
@@ -900,7 +900,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Progression globale recuperee.',
+                                        'message' => 'Global progress retrieved.',
                                         'data' => [
                                             'progress' => [
                                                 'reading' => [
@@ -1003,7 +1003,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Code d association genere.',
+                                        'message' => 'Association code generated.',
                                         'data' => [
                                             'association_code' => [
                                                 'id' => 3,
@@ -1034,7 +1034,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Code d association regenere.',
+                                        'message' => 'Association code regenerated.',
                                         'data' => [
                                             'association_code' => [
                                                 'id' => 4,
@@ -1103,7 +1103,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Dashboard tutor recupere.',
+                                        'message' => 'Tutor dashboard retrieved.',
                                         'data' => [
                                             'dashboard' => [
                                                 'total_learners' => 4,
@@ -1169,7 +1169,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Learner associe au tutor.',
+                                        'message' => 'Learner linked to tutor.',
                                         'data' => [
                                             'learner' => [
                                                 'id' => 2,
@@ -1209,7 +1209,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Learners du tutor recuperes.',
+                                        'message' => 'Tutor learners retrieved.',
                                         'data' => [
                                             'learners' => [
                                                 [
@@ -1241,7 +1241,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Progression du learner recuperee.',
+                                        'message' => 'Learner progress retrieved.',
                                         'data' => [
                                             'learner' => [
                                                 'id' => 2,
@@ -1308,7 +1308,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Tentatives de lecture du learner recuperees.',
+                                        'message' => 'Learner reading attempts retrieved.',
                                         'data' => [
                                             'learner' => [
                                                 'id' => 2,
@@ -1339,7 +1339,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Learner detache du tutor.',
+                                        'message' => 'Learner detached from tutor.',
                                         'data' => null,
                                     ],
                                 ],
@@ -1369,7 +1369,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Dashboard admin recupere.',
+                                        'message' => 'Admin dashboard retrieved.',
                                         'data' => [
                                             'dashboard' => [
                                                 'users' => [
@@ -1420,7 +1420,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Utilisateurs recuperes.',
+                                        'message' => 'Users retrieved.',
                                         'data' => [
                                             'users' => [
                                                 [
@@ -1456,7 +1456,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Utilisateur recupere.',
+                                        'message' => 'User retrieved.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 2,
@@ -1498,7 +1498,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Role utilisateur mis a jour.',
+                                        'message' => 'User role updated.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 2,
@@ -1541,7 +1541,7 @@ class ApiDocumentationController extends Controller
                                     'title' => 'Succes',
                                     'body' => [
                                         'success' => true,
-                                        'message' => 'Limites conversation IA mises a jour.',
+                                        'message' => 'AI conversation limits updated.',
                                         'data' => [
                                             'user' => [
                                                 'id' => 2,

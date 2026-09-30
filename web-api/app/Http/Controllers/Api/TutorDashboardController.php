@@ -22,7 +22,7 @@ class TutorDashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Dashboard tutor recupere.',
+            'message' => 'Tutor dashboard retrieved.',
             'data' => [
                 'dashboard' => $this->tutorDashboardSummary->forTutor($tutor),
             ],

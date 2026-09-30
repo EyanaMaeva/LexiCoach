@@ -18,8 +18,8 @@ class LearnerAssociationCodeController extends Controller
         return response()->json([
             'success' => true,
             'message' => $associationCode instanceof LearnerAssociationCode
-                ? 'Code d association actif recupere.'
-                : 'Aucun code d association actif.',
+                ? 'Active association code retrieved.'
+                : 'No active association code.',
             'data' => [
                 'association_code' => $associationCode instanceof LearnerAssociationCode
                     ? $this->formatAssociationCode($associationCode)
@@ -40,7 +40,7 @@ class LearnerAssociationCodeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Code d association genere.',
+            'message' => 'Association code generated.',
             'data' => [
                 'association_code' => $this->formatAssociationCode($associationCode),
                 'linked_tutors' => $this->linkedTutorsFor($user),
@@ -57,7 +57,7 @@ class LearnerAssociationCodeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Code d association regenere.',
+            'message' => 'Association code regenerated.',
             'data' => [
                 'association_code' => $this->formatAssociationCode($associationCode),
                 'linked_tutors' => $this->linkedTutorsFor($user),
@@ -73,8 +73,8 @@ class LearnerAssociationCodeController extends Controller
         return response()->json([
             'success' => true,
             'message' => $cancelledCode instanceof LearnerAssociationCode
-                ? 'Code d association annule.'
-                : 'Aucun code d association actif a annuler.',
+                ? 'Association code cancelled.'
+                : 'No active association code to cancel.',
             'data' => [
                 'association_code' => $cancelledCode instanceof LearnerAssociationCode
                     ? $this->formatAssociationCode($cancelledCode)

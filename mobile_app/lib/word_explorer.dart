@@ -1,187 +1,293 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
-class WordExplorer extends StatelessWidget {
+import 'app_colors.dart';
+import 'services/word_splitting_api_service.dart';
+
+class WordExplorer extends StatefulWidget {
   const WordExplorer({super.key});
 
   @override
+  State<WordExplorer> createState() => _WordExplorerState();
+}
+
+class _WordExplorerState extends State<WordExplorer> {
+  final _apiService = WordSplittingApiService();
+  final _textController = TextEditingController();
+
+  Map<String, dynamic>? _result;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _splitWords() async {
+    final text = _textController.text.trim();
+
+    if (text.isEmpty || _isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _apiService.splitText(text: text);
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final words = _result?['words'] as List<dynamic>? ?? [];
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // --- HEADER ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
-                    ),
-                  ),
-                  const Text(
-                    "Word Explorer",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textDark,
+          ),
+        ),
+        title: const Text(
+          'Word Split',
+          style: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        children: [
+          _IntroCard(),
+          const SizedBox(height: 18),
+          TextField(
+            controller: _textController,
+            minLines: 3,
+            maxLines: 5,
+            textInputAction: TextInputAction.newline,
+            decoration: InputDecoration(
+              hintText: 'Type a difficult word or sentence...',
+              hintStyle: const TextStyle(color: AppColors.textLight),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.all(20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: AppColors.textFieldBorder),
               ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Search Bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintText: "Search for a word...",
-                          border: InputBorder.none,
-                          icon: Icon(Icons.search_rounded, color: AppColors.primary),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 40),
-                    
-                    const Text(
-                      "Word of the Day",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    _buildWordCard(),
-                    
-                    const SizedBox(height: 40),
-                    
-                    const Text(
-                      "Recent Searches",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _buildSearchChip("Confident"),
-                        _buildSearchChip("Resilient"),
-                        _buildSearchChip("Aesthetic"),
-                        _buildSearchChip("Symmetry"),
-                      ],
-                    ),
-                  ],
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: AppColors.textFieldBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.4,
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 56,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _splitWords,
+              icon: _isLoading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.splitscreen_rounded),
+              label: Text(_isLoading ? 'Splitting...' : 'Split into syllables'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: AppColors.primary.withValues(
+                  alpha: 0.55,
+                ),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+          if (words.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Syllables',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 14),
+            ...words.map((word) => _WordCard(word: word)),
+            const SizedBox(height: 10),
+            _TipsCard(tips: _result?['tips'] as List<dynamic>? ?? []),
           ],
-        ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildWordCard() {
+class _IntroCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.logoTeal, AppColors.logoBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.logoBlue.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.textFieldBorder),
+      ),
+      child: const Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: Color(0xFFEFF6FF),
+            child: Icon(
+              Icons.record_voice_over_rounded,
+              color: AppColors.logoBlue,
+            ),
+          ),
+          SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'Break difficult words into small parts. Read one part, then join them slowly.',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WordCard extends StatelessWidget {
+  const _WordCard({required this.word});
+
+  final dynamic word;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = word as Map<String, dynamic>;
+    final syllables = data['syllables'] as List<dynamic>? ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.textFieldBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Luminous",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.volume_up_rounded, color: Colors.white),
-              ),
-            ],
-          ),
-          const Text(
-            "adjective / lu·mi·nous",
-            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            "Giving off light; bright or shining.",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              height: 1.4,
+          Text(
+            data['clean_word']?.toString() ?? '',
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: syllables
+                .map(
+                  (syllable) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.logoBlue.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      syllable.toString(),
+                      style: const TextStyle(
+                        color: AppColors.logoBlue,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSearchChip(String label) {
+class _TipsCard extends StatelessWidget {
+  const _TipsCard({required this.tips});
+
+  final List<dynamic> tips;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.textFieldBorder),
+        color: AppColors.logoTeal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(24),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textDark),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Practice tips',
+            style: TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...tips.map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                '- ${tip.toString()}',
+                style: const TextStyle(
+                  color: AppColors.textLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

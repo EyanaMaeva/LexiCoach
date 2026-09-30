@@ -262,13 +262,13 @@ PROMPT;
             AssistantIntent::ExplainText => $topic !== ''
                 ? "Je vais faire simple. {$topic} est un sujet que je peux expliquer avec des mots faciles."
                 : 'Je vais faire simple. Dis-moi le sujet que tu veux comprendre.',
-            AssistantIntent::Summarize => 'D’accord. Je peux le résumer en une phrase simple.',
-            AssistantIntent::Reformulate => 'D’accord. Je peux le reformuler avec des mots plus simples.',
-            AssistantIntent::HelpWrite => 'Je peux t’aider. Dis-moi la phrase que tu veux écrire.',
-            AssistantIntent::CorrectText => 'Je peux corriger une chose à la fois. Quelle phrase veux-tu corriger ?',
-            AssistantIntent::SlowDown => 'D’accord. Je vais parler plus lentement.',
-            AssistantIntent::Repeat => 'D’accord. Je recommence simplement.',
-            default => 'Je n’ai pas bien compris. Tu veux que je lise, que je résume, ou que j’explique ?',
+            AssistantIntent::Summarize => 'Sure. I can summarize it in one simple sentence.',
+            AssistantIntent::Reformulate => 'Sure. I can reformulate it with simpler words.',
+            AssistantIntent::HelpWrite => 'I can help. Tell me the sentence you want to write.',
+            AssistantIntent::CorrectText => 'I can correct one thing at a time. Which sentence do you want to correct?',
+            AssistantIntent::SlowDown => 'Sure. I will speak more slowly.',
+            AssistantIntent::Repeat => 'Sure. I will start again simply.',
+            default => 'I did not understand clearly. Do you want me to read, summarize, or explain?',
         };
     }
 

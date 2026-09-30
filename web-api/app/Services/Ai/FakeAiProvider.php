@@ -47,33 +47,30 @@ class FakeAiProvider implements AiProvider
     /**
      * @return array<string, mixed>
      */
-    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $summary): array
+    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $documentText): array
     {
-        $wordCount = str_word_count($summary);
-        $containsKeyword = Str::contains(
-            Str::lower($summary),
-            collect(explode(' ', Str::lower($exercise->source_text)))
-                ->filter(fn (string $word): bool => mb_strlen($word) > 5)
-                ->take(3)
-                ->all(),
-        );
-        $score = $wordCount >= $exercise->min_words && $containsKeyword ? 84 : 62;
+        $words = preg_split('/\s+/', trim($documentText)) ?: [];
+        $summary = collect($words)
+            ->take(max($exercise->min_words, min($exercise->max_words, 45)))
+            ->implode(' ');
+        $summary = Str::finish($summary, '.');
+        $score = str_word_count($documentText) >= $exercise->min_words ? 82 : 62;
 
         return [
             'score' => $score,
             'status' => $this->statusFromScore($score),
             'improved_summary' => $summary,
             'missing_ideas' => $score >= 75 ? [] : [
-                'Add the most important idea from the source text.',
+                'Add a longer document so the app can find the main idea.',
             ],
             'strengths' => [
-                'The summary is readable.',
+                'The summary is short and readable.',
             ],
             'feedback' => [
-                'title' => $score >= 75 ? 'Good summary!' : 'Try again.',
+                'title' => $score >= 75 ? 'Summary ready!' : 'Add more text.',
                 'message' => $score >= 75
-                    ? 'The summary keeps the main idea. Make it even more precise.'
-                    : 'The summary needs more key information from the text.',
+                    ? 'The document was summarized with simple words.'
+                    : 'Paste a longer document so the summary can be more useful.',
             ],
             'raw_ai_response' => [
                 'provider' => 'fake',

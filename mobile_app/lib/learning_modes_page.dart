@@ -5,6 +5,7 @@ import 'app_colors.dart';
 import 'reading_exercises_list.dart';
 import 'services/learner_api_service.dart';
 import 'smart_abstract_exercises_list.dart';
+import 'word_explorer.dart';
 import 'writing_exercises_list.dart';
 
 class LearningModesPage extends StatefulWidget {
@@ -42,6 +43,8 @@ class _LearningModesPageState extends State<LearningModesPage> {
       page = const WritingExercisesList();
     } else if (slug == 'smart-abstract') {
       page = const SmartAbstractExercisesList();
+    } else if (slug == 'word-splitting') {
+      page = const WordExplorer();
     } else if (slug == 'ai-conversation') {
       page = const AiConversationPage();
     }

@@ -78,19 +78,19 @@ class WritingSmartAbstractApiTest extends TestCase
             ->assertJsonPath('data.exercises.0.title', 'Library paragraph');
 
         $this->postJson("/api/smart-abstract-exercises/{$exercise->id}/evaluate", [
-            'summary' => 'The class visits the library and the teacher helps learners choose books.',
+            'document_text' => 'Every Wednesday, the class visits the library. The teacher helps each learner choose one book. After reading quietly, the learners share one new word.',
         ])
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.result.status', 'good')
-            ->assertJsonPath('data.result.score', 84)
-            ->assertJsonPath('data.result.feedback.title', 'Good summary!')
-            ->assertJsonPath('data.attempt.score', 84);
+            ->assertJsonPath('data.result.score', 82)
+            ->assertJsonPath('data.result.feedback.title', 'Summary ready!')
+            ->assertJsonPath('data.attempt.score', 82);
 
         $this->assertDatabaseHas('smart_abstract_attempts', [
             'user_id' => $learner->id,
             'smart_abstract_exercise_id' => $exercise->id,
-            'score' => 84,
+            'score' => 82,
             'status' => 'good',
         ]);
     }
@@ -109,7 +109,24 @@ class WritingSmartAbstractApiTest extends TestCase
 
         $this->postJson("/api/smart-abstract-exercises/{$smartAbstractExercise->id}/evaluate", [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['summary']);
+            ->assertJsonValidationErrors(['document_text']);
+    }
+
+    public function test_learner_can_split_words_into_syllables(): void
+    {
+        $learner = User::factory()->create();
+
+        Sanctum::actingAs($learner);
+
+        $this->postJson('/api/word-splitting/split', [
+            'text' => 'beautiful garden',
+            'language' => 'en-US',
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.result.words.0.clean_word', 'beautiful')
+            ->assertJsonPath('data.result.words.1.clean_word', 'garden')
+            ->assertJsonCount(2, 'data.result.words');
     }
 
     public function test_learning_mode_exercises_endpoint_supports_writing_and_smart_abstract(): void

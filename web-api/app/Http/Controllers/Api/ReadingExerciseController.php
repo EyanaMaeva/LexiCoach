@@ -27,7 +27,7 @@ class ReadingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercices de lecture recuperes.',
+            'message' => 'Reading exercises retrieved.',
             'data' => [
                 'exercises' => $exercises,
             ],
@@ -40,7 +40,7 @@ class ReadingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercice de lecture recupere.',
+            'message' => 'Reading exercise retrieved.',
             'data' => [
                 'exercise' => $this->formatExercise($readingExercise),
             ],
@@ -74,7 +74,7 @@ class ReadingExerciseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Lecture evaluee.',
+            'message' => 'Reading evaluated.',
             'data' => [
                 'exercise' => $this->formatExercise($readingExercise),
                 'result' => $result,

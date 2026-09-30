@@ -26,9 +26,12 @@ class AiFeedbackService
     /**
      * @return array<string, mixed>
      */
-    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $summary): array
+    public function evaluateSmartAbstract(SmartAbstractExercise $exercise, string $documentText): array
     {
-        return $this->normalizeSmartAbstract($this->provider()->evaluateSmartAbstract($exercise, $summary), $summary);
+        return $this->normalizeSmartAbstract(
+            $this->provider()->evaluateSmartAbstract($exercise, $documentText),
+            $documentText,
+        );
     }
 
     /**
@@ -87,15 +90,20 @@ class AiFeedbackService
      * @param  array<string, mixed>  $result
      * @return array<string, mixed>
      */
-    private function normalizeSmartAbstract(array $result, string $summary): array
+    private function normalizeSmartAbstract(array $result, string $documentText): array
     {
         $score = $this->scoreFrom($result['score'] ?? 0);
+        $summary = $this->stringFrom(
+            $result['improved_summary'] ?? $result['summary'] ?? '',
+            'This document has been summarized in simple words.',
+        );
 
         return [
             'score' => $score,
             'status' => $this->statusFrom($result['status'] ?? null, $score),
+            'document_text' => $documentText,
             'summary' => $summary,
-            'improved_summary' => $this->stringFrom($result['improved_summary'] ?? $summary, $summary),
+            'improved_summary' => $summary,
             'missing_ideas' => $this->arrayFrom($result['missing_ideas'] ?? []),
             'strengths' => $this->arrayFrom($result['strengths'] ?? []),
             'feedback' => $this->feedbackFrom($result['feedback'] ?? null, $score),

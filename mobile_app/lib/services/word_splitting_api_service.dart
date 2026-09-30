@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 
 import '../const.dart';
 
-class SmartAbstractApiService {
-  SmartAbstractApiService({http.Client? client, FlutterSecureStorage? storage})
+class WordSplittingApiService {
+  WordSplittingApiService({http.Client? client, FlutterSecureStorage? storage})
     : _client = client ?? http.Client(),
       _storage = storage ?? const FlutterSecureStorage();
 
@@ -15,38 +15,18 @@ class SmartAbstractApiService {
   final http.Client _client;
   final FlutterSecureStorage _storage;
 
-  Future<List<dynamic>> getExercises() async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/smart-abstract-exercises'),
-      headers: await _authHeaders(),
-    );
-
-    final data = _decodeResponse(response);
-    return data['data']['exercises'];
-  }
-
-  Future<Map<String, dynamic>> getExerciseDetail(int id) async {
-    final response = await _client.get(
-      Uri.parse('$baseUrl/smart-abstract-exercises/$id'),
-      headers: await _authHeaders(),
-    );
-
-    final data = _decodeResponse(response);
-    return data['data']['exercise'];
-  }
-
-  Future<Map<String, dynamic>> evaluateExercise({
-    required int id,
-    required String documentText,
+  Future<Map<String, dynamic>> splitText({
+    required String text,
+    String language = 'en-US',
   }) async {
     final response = await _client.post(
-      Uri.parse('$baseUrl/smart-abstract-exercises/$id/evaluate'),
+      Uri.parse('$baseUrl/word-splitting/split'),
       headers: await _authHeaders(),
-      body: jsonEncode({'document_text': documentText}),
+      body: jsonEncode({'text': text, 'language': language}),
     );
 
     final data = _decodeResponse(response);
-    return data['data'];
+    return data['data']['result'] as Map<String, dynamic>;
   }
 
   Future<Map<String, String>> _authHeaders() async {

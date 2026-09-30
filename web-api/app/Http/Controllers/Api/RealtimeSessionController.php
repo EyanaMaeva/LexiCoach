@@ -56,7 +56,7 @@ class RealtimeSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session realtime creee.',
+            'message' => 'Realtime session created.',
             'data' => [
                 'session' => [
                     'id' => $session->id,
@@ -89,7 +89,7 @@ class RealtimeSessionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Session realtime terminee.',
+            'message' => 'Realtime session ended.',
             'data' => [
                 'session' => [
                     'id' => $session->id,

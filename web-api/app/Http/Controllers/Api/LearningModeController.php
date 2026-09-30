@@ -22,7 +22,7 @@ class LearningModeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Modes d apprentissage recuperes.',
+            'message' => 'Learning modes retrieved.',
             'data' => [
                 'learning_modes' => $modes,
             ],
@@ -35,7 +35,7 @@ class LearningModeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mode d apprentissage recupere.',
+            'message' => 'Learning mode retrieved.',
             'data' => [
                 'learning_mode' => $this->formatMode($mode),
             ],
@@ -55,7 +55,7 @@ class LearningModeController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Exercices du mode d apprentissage recuperes.',
+            'message' => 'Learning mode exercises retrieved.',
             'data' => [
                 'learning_mode' => $this->formatMode($mode),
                 'exercises' => $exercises,

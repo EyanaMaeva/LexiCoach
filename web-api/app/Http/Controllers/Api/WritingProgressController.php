@@ -28,7 +28,7 @@ class WritingProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Tentatives writing recuperees.',
+            'message' => 'Writing attempts retrieved.',
             'data' => [
                 'attempts' => $attempts,
             ],
@@ -41,7 +41,7 @@ class WritingProgressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Progression writing recuperee.',
+            'message' => 'Writing progress retrieved.',
             'data' => [
                 'progress' => $this->writingProgressSummary->forUser($user),
             ],

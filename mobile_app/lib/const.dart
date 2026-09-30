@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 /// API URLs can be overridden for a physical device or production build:
 ///
-/// flutter run --dart-define=API_BASE_URL=https://api.example.com/api \
+/// flutter run --dart-define=API_BASE_URL=https://lexicoach.mrsergio.dev/api \
 ///   --dart-define=AI_CONVERSATION_WS_URL=wss://realtime.example.com/ai-conversations/live
 ///
 /// For a physical device using a backend on the development machine, replace
@@ -32,7 +32,7 @@ String get _localApiHost {
 
 final String baseUrl = _apiBaseUrlOverride.isNotEmpty
     ? _apiBaseUrlOverride
-    : 'http://$_localApiHost:8000/api';
+    : 'https://lexicoach.mrsergio.dev/api';
 
 final String aiConversationWsUrl = _aiConversationWsUrlOverride.isNotEmpty
     ? _aiConversationWsUrlOverride

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_colors.dart';
 import 'services/smart_abstract_api_service.dart';
@@ -75,6 +77,12 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     setState(() => _isEvaluating = true);
 
     try {
+      final paid = await _ensurePayment();
+      if (!paid) {
+        if (mounted) setState(() => _isEvaluating = false);
+        return;
+      }
+
       final data = await _apiService.evaluateExercise(
         id: widget.exerciseId,
         documentText: documentText,
@@ -93,6 +101,108 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
+  }
+
+  /// Crée une session de paiement Mercy Pay (100 FCFA), ouvre la page de
+  /// paiement dans le navigateur, puis attend la confirmation du webhook
+  /// (jamais la redirection seule, qui ne prouve rien côté client).
+  Future<bool> _ensurePayment() async {
+    final Map<String, dynamic> checkout;
+    try {
+      checkout = await _apiService.createCheckout(widget.exerciseId);
+    } catch (error) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Payment error: $error')));
+      return false;
+    }
+
+    final payment = checkout['payment'] as Map<String, dynamic>;
+    final checkoutUrl = checkout['checkout_url']?.toString() ?? '';
+    final paymentId = payment['id'] as int;
+
+    final launched = checkoutUrl.isNotEmpty
+        ? await launchUrl(
+            Uri.parse(checkoutUrl),
+            mode: LaunchMode.externalApplication,
+          )
+        : false;
+
+    if (!launched) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the payment page.')),
+      );
+      return false;
+    }
+
+    if (!mounted) return false;
+    return _waitForPaymentCompletion(paymentId);
+  }
+
+  Future<bool> _waitForPaymentCompletion(int paymentId) async {
+    final completer = Completer<bool>();
+    Timer? timer;
+    var elapsedSeconds = 0;
+    const pollInterval = Duration(seconds: 3);
+    const maxWait = Duration(minutes: 10);
+
+    void finish(bool result) {
+      timer?.cancel();
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) navigator.pop();
+      if (!completer.isCompleted) completer.complete(result);
+    }
+
+    if (!mounted) return false;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(width: 20),
+              const Expanded(
+                child: Text(
+                  'En attente de la confirmation du paiement (100 FCFA)...',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => finish(false),
+              child: const Text('Annuler'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    timer = Timer.periodic(pollInterval, (_) async {
+      elapsedSeconds += pollInterval.inSeconds;
+
+      try {
+        final status = await _apiService.getPaymentStatus(paymentId);
+        final value = status['status']?.toString();
+
+        if (value == 'completed') {
+          finish(true);
+        } else if (value == 'failed') {
+          finish(false);
+        } else if (elapsedSeconds >= maxWait.inSeconds) {
+          finish(false);
+        }
+      } catch (_) {
+        if (elapsedSeconds >= maxWait.inSeconds) finish(false);
+      }
+    });
+
+    return completer.future;
   }
 
   Future<void> _pickDocument() async {
@@ -259,7 +369,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
                     )
                   : const Icon(Icons.auto_awesome_rounded),
               label: Text(
-                _isEvaluating ? 'Summarizing...' : 'Generate Summary',
+                _isEvaluating ? 'Processing...' : 'Generate Summary (100 FCFA)',
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,

@@ -49,6 +49,30 @@ class SmartAbstractApiService {
     return data['data'];
   }
 
+  /// Crée une session de paiement Mercy Pay (100 FCFA) pour débloquer une
+  /// évaluation de cet exercice. Retourne `{payment: {...}, checkout_url}`.
+  Future<Map<String, dynamic>> createCheckout(int id) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/smart-abstract-exercises/$id/checkout'),
+      headers: await _authHeaders(),
+    );
+
+    final data = _decodeResponse(response);
+    return data['data'];
+  }
+
+  /// Consulte le statut d'un paiement (pending/completed/failed) par son id
+  /// local, pour faire du polling après ouverture de la page de paiement.
+  Future<Map<String, dynamic>> getPaymentStatus(int paymentId) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl/smart-abstract-payments/$paymentId'),
+      headers: await _authHeaders(),
+    );
+
+    final data = _decodeResponse(response);
+    return data['data']['payment'];
+  }
+
   Future<Map<String, String>> _authHeaders() async {
     final token = await _storage.read(key: _tokenKey);
 

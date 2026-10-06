@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../const.dart';
+
+const _logTag = '[Payment]';
 
 class SmartAbstractApiService {
   SmartAbstractApiService({http.Client? client, FlutterSecureStorage? storage})
@@ -39,11 +42,19 @@ class SmartAbstractApiService {
     required int id,
     required String documentText,
   }) async {
+    debugPrint('$_logTag evaluateExercise: calling for exercise=$id (consumes the paid credit)');
+
     final response = await _client.post(
       Uri.parse('$baseUrl/smart-abstract-exercises/$id/evaluate'),
       headers: await _authHeaders(),
       body: jsonEncode({'document_text': documentText}),
     );
+
+    debugPrint('$_logTag evaluateExercise: HTTP ${response.statusCode} for exercise=$id');
+
+    if (response.statusCode == 402) {
+      debugPrint('$_logTag evaluateExercise: 402 Payment Required - no available credit for exercise=$id');
+    }
 
     final data = _decodeResponse(response);
     return data['data'];
@@ -52,13 +63,26 @@ class SmartAbstractApiService {
   /// Crée une session de paiement Mercy Pay (100 FCFA) pour débloquer une
   /// évaluation de cet exercice. Retourne `{payment: {...}, checkout_url}`.
   Future<Map<String, dynamic>> createCheckout(int id) async {
+    debugPrint('$_logTag createCheckout: requesting checkout session for exercise=$id');
+
     final response = await _client.post(
       Uri.parse('$baseUrl/smart-abstract-exercises/$id/checkout'),
       headers: await _authHeaders(),
     );
 
+    debugPrint('$_logTag createCheckout: HTTP ${response.statusCode} for exercise=$id');
+
     final data = _decodeResponse(response);
-    return data['data'];
+    final result = data['data'] as Map<String, dynamic>;
+    final payment = result['payment'] as Map<String, dynamic>?;
+
+    debugPrint(
+      '$_logTag createCheckout: success payment_id=${payment?['id']} '
+      'reference=${payment?['reference']} status=${payment?['status']} '
+      'checkout_url=${result['checkout_url']}',
+    );
+
+    return result;
   }
 
   /// Consulte le statut d'un paiement (pending/completed/failed) par son id
@@ -70,7 +94,14 @@ class SmartAbstractApiService {
     );
 
     final data = _decodeResponse(response);
-    return data['data']['payment'];
+    final payment = data['data']['payment'] as Map<String, dynamic>;
+
+    debugPrint(
+      '$_logTag getPaymentStatus: payment_id=$paymentId HTTP ${response.statusCode} '
+      'status=${payment['status']} consumed_at=${payment['consumed_at']}',
+    );
+
+    return payment;
   }
 
   Future<Map<String, String>> _authHeaders() async {
@@ -88,6 +119,14 @@ class SmartAbstractApiService {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
+    }
+
+    final url = response.request?.url.toString() ?? '';
+    final isPaymentRelated =
+        url.contains('checkout') || url.contains('smart-abstract-payments') || url.contains('/evaluate');
+
+    if (isPaymentRelated) {
+      debugPrint('$_logTag API error: $url -> HTTP ${response.statusCode}: ${response.body}');
     }
 
     throw Exception(data['message'] ?? 'API Error ${response.statusCode}');

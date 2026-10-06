@@ -5,10 +5,13 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'app_colors.dart';
+import 'const.dart';
+import 'payment_webview_page.dart';
 import 'services/smart_abstract_api_service.dart';
+
+const _logTag = '[Payment]';
 
 class SmartAbstractPractice extends StatefulWidget {
   const SmartAbstractPractice({super.key, required this.exerciseId});
@@ -75,10 +78,14 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
 
     setState(() => _isEvaluating = true);
+    debugPrint('$_logTag _evaluate: starting paid-evaluation flow for exercise=${widget.exerciseId}');
 
     try {
       final paid = await _ensurePayment();
+      debugPrint('$_logTag _evaluate: _ensurePayment resolved with paid=$paid');
+
       if (!paid) {
+        debugPrint('$_logTag _evaluate: aborting, payment was not confirmed');
         if (mounted) setState(() => _isEvaluating = false);
         return;
       }
@@ -87,6 +94,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
         id: widget.exerciseId,
         documentText: documentText,
       );
+      debugPrint('$_logTag _evaluate: evaluation succeeded for exercise=${widget.exerciseId}');
       if (!mounted) return;
 
       setState(() {
@@ -94,6 +102,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
         _isEvaluating = false;
       });
     } catch (error) {
+      debugPrint('$_logTag _evaluate: error for exercise=${widget.exerciseId}: $error');
       if (!mounted) return;
 
       setState(() => _isEvaluating = false);
@@ -107,10 +116,13 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
   /// paiement dans le navigateur, puis attend la confirmation du webhook
   /// (jamais la redirection seule, qui ne prouve rien côté client).
   Future<bool> _ensurePayment() async {
+    debugPrint('$_logTag _ensurePayment: creating checkout session for exercise=${widget.exerciseId}');
+
     final Map<String, dynamic> checkout;
     try {
       checkout = await _apiService.createCheckout(widget.exerciseId);
     } catch (error) {
+      debugPrint('$_logTag _ensurePayment: createCheckout failed: $error');
       if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
@@ -122,14 +134,8 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     final checkoutUrl = checkout['checkout_url']?.toString() ?? '';
     final paymentId = payment['id'] as int;
 
-    final launched = checkoutUrl.isNotEmpty
-        ? await launchUrl(
-            Uri.parse(checkoutUrl),
-            mode: LaunchMode.externalApplication,
-          )
-        : false;
-
-    if (!launched) {
+    if (checkoutUrl.isEmpty) {
+      debugPrint('$_logTag _ensurePayment: empty checkout_url in response: $checkout');
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open the payment page.')),
@@ -138,17 +144,48 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
 
     if (!mounted) return false;
-    return _waitForPaymentCompletion(paymentId);
+
+    debugPrint('$_logTag _ensurePayment: opening webview payment_id=$paymentId url=$checkoutUrl');
+
+    // La WebView se ferme dès qu'elle détecte la redirection success/cancel,
+    // mais ça ne prouve rien côté client : on attend ensuite la confirmation
+    // du webhook via _waitForPaymentCompletion. Un retour explicite "cancel"
+    // raccourcit juste l'attente (au cas où le webhook arrive quand même).
+    final webviewResult = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => PaymentWebViewPage(
+          checkoutUrl: checkoutUrl,
+          successUrlPrefix: '$webBaseUrl/payments/smart-abstract/success',
+          cancelUrlPrefix: '$webBaseUrl/payments/smart-abstract/cancel',
+        ),
+      ),
+    );
+
+    debugPrint('$_logTag _ensurePayment: webview closed for payment_id=$paymentId result=$webviewResult');
+
+    if (!mounted) return false;
+    return _waitForPaymentCompletion(
+      paymentId,
+      maxWait: webviewResult == false
+          ? const Duration(seconds: 8)
+          : const Duration(minutes: 10),
+    );
   }
 
-  Future<bool> _waitForPaymentCompletion(int paymentId) async {
+  Future<bool> _waitForPaymentCompletion(
+    int paymentId, {
+    Duration maxWait = const Duration(minutes: 10),
+  }) async {
     final completer = Completer<bool>();
     Timer? timer;
     var elapsedSeconds = 0;
     const pollInterval = Duration(seconds: 3);
-    const maxWait = Duration(minutes: 10);
 
-    void finish(bool result) {
+    void finish(bool result, String reason) {
+      debugPrint(
+        '$_logTag _waitForPaymentCompletion: payment_id=$paymentId finished '
+        'result=$result reason="$reason" after ${elapsedSeconds}s',
+      );
       timer?.cancel();
       final navigator = Navigator.of(context, rootNavigator: true);
       if (navigator.canPop()) navigator.pop();
@@ -156,6 +193,11 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
 
     if (!mounted) return false;
+
+    debugPrint(
+      '$_logTag _waitForPaymentCompletion: polling started payment_id=$paymentId '
+      'interval=${pollInterval.inSeconds}s maxWait=${maxWait.inSeconds}s',
+    );
 
     unawaited(
       showDialog<void>(
@@ -175,7 +217,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
           ),
           actions: [
             TextButton(
-              onPressed: () => finish(false),
+              onPressed: () => finish(false, 'cancelled by user'),
               child: const Text('Annuler'),
             ),
           ],
@@ -189,16 +231,26 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
       try {
         final status = await _apiService.getPaymentStatus(paymentId);
         final value = status['status']?.toString();
+        debugPrint(
+          '$_logTag _waitForPaymentCompletion: poll payment_id=$paymentId '
+          'elapsed=${elapsedSeconds}s status=$value',
+        );
 
         if (value == 'completed') {
-          finish(true);
+          finish(true, 'status=completed');
         } else if (value == 'failed') {
-          finish(false);
+          finish(false, 'status=failed');
         } else if (elapsedSeconds >= maxWait.inSeconds) {
-          finish(false);
+          finish(false, 'timeout waiting for completion');
         }
-      } catch (_) {
-        if (elapsedSeconds >= maxWait.inSeconds) finish(false);
+      } catch (error) {
+        debugPrint(
+          '$_logTag _waitForPaymentCompletion: poll error payment_id=$paymentId '
+          'elapsed=${elapsedSeconds}s error=$error',
+        );
+        if (elapsedSeconds >= maxWait.inSeconds) {
+          finish(false, 'timeout after poll errors');
+        }
       }
     });
 

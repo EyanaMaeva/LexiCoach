@@ -34,6 +34,12 @@ final String baseUrl = _apiBaseUrlOverride.isNotEmpty
     ? _apiBaseUrlOverride
     : 'https://lexicoach.mrsergio.dev/api';
 
+/// Same host as [baseUrl] but without the `/api` suffix, for web pages
+/// served by the backend (e.g. payment success/cancel redirect pages).
+final String webBaseUrl = baseUrl.endsWith('/api')
+    ? baseUrl.substring(0, baseUrl.length - '/api'.length)
+    : baseUrl;
+
 final String aiConversationWsUrl = _aiConversationWsUrlOverride.isNotEmpty
     ? _aiConversationWsUrlOverride
     : 'ws://$_localApiHost:8787/ai-conversations/live';

@@ -70,9 +70,8 @@ class _ProgressChartPageState extends State<ProgressChartPage> {
 
           final progress = snapshot.data ?? {};
           final entries = _progressEntries(progress);
-          // Smart Abstract n'est jamais note (l'IA resume, elle ne juge
-          // pas l'apprenant) : exclu des agregats de score, mais son
-          // activite reste comptee dans le total de tentatives.
+          // Smart Abstract is not scored, so it is excluded from score
+          // aggregates while its activity still counts in attempts.
           final scoredEntries = entries.where((entry) => entry.isScored);
           final totalAttempts = entries.fold<int>(
             0,

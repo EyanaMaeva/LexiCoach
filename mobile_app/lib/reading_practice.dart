@@ -206,7 +206,7 @@ class _ReadingPracticeState extends State<ReadingPractice> {
   Future<void> _speak() async {
     if (_exercise == null || _isSpeaking) return;
 
-    // Le micro et le TTS se disputent la session audio iOS : on coupe
+    // The microphone and TTS compete for the iOS audio session, so we
     // always stop listening before starting playback.
     if (_isListening) {
       await _stopRealtimeCapture();

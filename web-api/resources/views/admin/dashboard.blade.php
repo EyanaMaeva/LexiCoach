@@ -262,36 +262,68 @@
                 box-shadow: 0 0 0 5px rgba(101, 71, 232, .12);
             }
 
-            .table-wrap {
-                overflow-x: auto;
-                background: var(--surface);
+            .user-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                gap: 14px;
+                padding: 16px;
             }
 
-            table {
+            .user-card {
+                display: grid;
+                gap: 12px;
+                border: 1px solid var(--primary-border);
+                border-radius: 22px;
+                background: var(--primary-pale);
+                padding: 16px;
+            }
+
+            .user-card-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: start;
+                gap: 10px;
+            }
+
+            .user-card-footer {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+
+            .user-card-footer .button {
+                min-height: 42px;
                 width: 100%;
-                min-width: 980px;
-                border-collapse: collapse;
-                text-align: left;
-                font-size: 14px;
-            }
-
-            th {
-                background: var(--surface);
-                color: var(--muted);
-                font-size: 12px;
-                font-weight: 850;
-                padding: 13px 16px;
-                text-transform: uppercase;
-            }
-
-            td {
-                border-top: 1px solid var(--primary-border);
-                padding: 15px 16px;
-                vertical-align: top;
             }
 
             .name {
                 font-weight: 850;
+            }
+
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 5px 11px;
+                font-size: 11px;
+                font-weight: 850;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+
+            .status-active {
+                background: var(--green-soft);
+                color: #0F766E;
+            }
+
+            .status-suspended {
+                background: var(--orange-soft);
+                color: #9A5B00;
+            }
+
+            .status-blocked {
+                background: var(--red-soft);
+                color: #B42318;
             }
 
             .role {
@@ -370,28 +402,19 @@
                 background: var(--primary);
             }
 
-            .limit-controls {
+            .generate-result {
                 display: grid;
-                grid-template-columns: minmax(88px, 1fr) minmax(88px, 1fr);
                 gap: 8px;
-                min-width: 230px;
+                margin-top: 14px;
             }
 
-            .limit-controls label {
-                font-size: 11px;
-            }
-
-            .limit-controls input {
-                width: 100%;
-                min-height: 40px;
-                border-radius: 14px;
-                padding: 0 10px;
-            }
-
-            .limit-save {
-                grid-column: 1 / -1;
-                min-height: 40px;
-                border-radius: 14px;
+            .generate-result-item {
+                border: 1px solid var(--primary-border);
+                border-radius: 16px;
+                background: var(--primary-pale);
+                padding: 10px 13px;
+                font-size: 13px;
+                font-weight: 800;
             }
 
             .empty {
@@ -432,12 +455,12 @@
                     <div>
                         <p class="eyebrow">LexiCoach</p>
                         <h1>Admin Dashboard</h1>
-                        <p class="muted">Gestion des comptes, roles et statistiques globales.</p>
+                        <p class="muted">Manage accounts, roles, and global statistics.</p>
                     </div>
                     <div class="actions">
                         <span class="pill" id="admin-name">Admin</span>
-                        <button class="button" id="refresh-dashboard">Actualiser</button>
-                        <button class="button button-primary" id="logout">Deconnexion</button>
+                        <button class="button" id="refresh-dashboard">Refresh</button>
+                        <button class="button button-primary" id="logout">Log out</button>
                     </div>
                 </header>
 
@@ -449,51 +472,71 @@
                     <div class="panel">
                         <div class="section-head">
                             <div>
-                                <h2>Gestion des comptes</h2>
-                                <p class="muted">Recherche, filtre et modification des roles.</p>
+                                <h2>Account Management</h2>
+                                <p class="muted">Search, filter, and update roles.</p>
                             </div>
                             <div class="filters">
                                 <label>
-                                    Recherche
-                                    <input id="search" type="search" placeholder="Nom ou email">
+                                    Search
+                                    <input id="search" type="search" placeholder="Name or email">
                                 </label>
                                 <label>
                                     Role
                                     <select id="role-filter">
-                                        <option value="all">Tous</option>
+                                        <option value="all">All</option>
                                         <option value="learner">Learner</option>
                                         <option value="tutor">Tutor</option>
                                         <option value="admin">Admin</option>
                                     </select>
                                 </label>
-                                <button class="button" id="filter-users">Filtrer</button>
+                                <button class="button" id="filter-users">Filter</button>
                             </div>
                         </div>
-                        <div class="table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Compte</th>
-                                        <th>Role</th>
-                                        <th>Activite</th>
-                                        <th>Conversation IA</th>
-                                        <th>Modifier</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="users-body"></tbody>
-                            </table>
-                        </div>
-                        <div class="empty" id="users-empty" hidden>Aucun utilisateur ne correspond au filtre.</div>
+                        <div class="user-cards" id="users-body"></div>
+                        <div class="empty" id="users-empty" hidden>No users match this filter.</div>
                     </div>
 
                     <aside style="display: grid; gap: 18px;">
                         <section class="panel activity">
-                            <h2>Repartition</h2>
+                            <h2>Generate Exercises</h2>
+                            <p class="muted">Create new exercises with AI.</p>
+                            <div class="side-list" style="margin-top: 14px;">
+                                <label>
+                                    Mode
+                                    <select id="generate-type">
+                                        <option value="reading">Reading</option>
+                                        <option value="writing">Writing</option>
+                                        <option value="smart-abstract">Smart Abstract</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Level
+                                    <select id="generate-level">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Language
+                                    <input id="generate-language" type="text" value="en-US">
+                                </label>
+                                <label>
+                                    Count
+                                    <input id="generate-count" type="number" min="1" max="10" value="3">
+                                </label>
+                                <button class="button button-primary" id="generate-button">Generate</button>
+                            </div>
+                            <div class="generate-result" id="generate-result" hidden></div>
+                        </section>
+
+                        <section class="panel activity">
+                            <h2>Breakdown</h2>
                             <div class="side-list" id="roles-breakdown"></div>
                         </section>
 
                         <section class="panel activity">
-                            <h2>Dernieres tentatives</h2>
+                            <h2>Latest Attempts</h2>
                             <div class="side-list" id="recent-attempts"></div>
                         </section>
                     </aside>
@@ -515,6 +558,7 @@
                 usersEmpty: document.getElementById('users-empty'),
                 rolesBreakdown: document.getElementById('roles-breakdown'),
                 recentAttempts: document.getElementById('recent-attempts'),
+                generateResult: document.getElementById('generate-result'),
             };
 
             document.getElementById('logout').addEventListener('click', () => {
@@ -524,6 +568,10 @@
 
             document.getElementById('refresh-dashboard').addEventListener('click', () => {
                 loadAdminArea();
+            });
+
+            document.getElementById('generate-button').addEventListener('click', () => {
+                generateExercises();
             });
 
             document.getElementById('filter-users').addEventListener('click', () => {
@@ -561,7 +609,7 @@
                         return;
                     }
 
-                    showNotice(error.message || 'Erreur API.');
+                    showNotice(error.message || 'API error.');
                 } finally {
                     setLoading(false);
                 }
@@ -591,17 +639,17 @@
                         return;
                     }
 
-                    showNotice(error.message || 'Erreur API.');
+                    showNotice(error.message || 'API error.');
                 }
             }
 
             function renderDashboard() {
                 elements.metrics.innerHTML = [
-                    metricCard('Utilisateurs', dashboard.users.total, `${dashboard.users.learners} learners, ${dashboard.users.tutors} tutors`, 'U'),
-                    metricCard('Reading attempts', dashboard.learning.reading_attempts, `${dashboard.learning.average_reading_score}% de moyenne`, 'R'),
-                    metricCard('Writing attempts', dashboard.learning.writing_attempts || 0, `${dashboard.learning.average_writing_score || 0}% de moyenne`, 'W'),
-                    metricCard('Smart abstract', dashboard.learning.smart_abstract_attempts || 0, `${dashboard.learning.smart_abstract_exercises || 0} documents disponibles`, 'A'),
-                    metricCard('Associations', dashboard.tutor_view.linked_pairs, `${dashboard.tutor_view.tutors_with_learners} tutors actifs`, 'L'),
+                    metricCard('Users', dashboard.users.total, `${dashboard.users.learners} learners, ${dashboard.users.tutors} tutors`, 'U'),
+                    metricCard('Reading attempts', dashboard.learning.reading_attempts, `${dashboard.learning.average_reading_score}% average`, 'R'),
+                    metricCard('Writing attempts', dashboard.learning.writing_attempts || 0, `${dashboard.learning.average_writing_score || 0}% average`, 'W'),
+                    metricCard('Smart abstract', dashboard.learning.smart_abstract_attempts || 0, `${dashboard.learning.smart_abstract_exercises || 0} available documents`, 'A'),
+                    metricCard('Associations', dashboard.tutor_view.linked_pairs, `${dashboard.tutor_view.tutors_with_learners} active tutors`, 'L'),
                 ].join('');
 
                 elements.rolesBreakdown.innerHTML = [
@@ -611,7 +659,7 @@
                 ].join('');
 
                 if (dashboard.recent_attempts.length === 0) {
-                    elements.recentAttempts.innerHTML = '<p class="muted">Aucune tentative recente.</p>';
+                    elements.recentAttempts.innerHTML = '<p class="muted">No recent attempts.</p>';
                     return;
                 }
 
@@ -630,113 +678,122 @@
                     .join('');
             }
 
+            const STATUS_LABELS = {
+                active: 'Active',
+                suspended: 'Suspended',
+                blocked: 'Blocked',
+            };
+
+            function statusActionsFor(status) {
+                if (status === 'blocked') {
+                    return [{ label: 'Reactivate', next: 'active' }];
+                }
+
+                if (status === 'suspended') {
+                    return [
+                        { label: 'Reactivate', next: 'active' },
+                        { label: 'Block', next: 'blocked' },
+                    ];
+                }
+
+                return [
+                    { label: 'Suspend', next: 'suspended' },
+                    { label: 'Block', next: 'blocked' },
+                ];
+            }
+
             function renderUsers(users) {
                 elements.usersEmpty.hidden = users.length !== 0;
                 elements.usersBody.innerHTML = users
                     .map((user) => {
-                        const limits = user.conversation_limits || {};
-                        const sessionMinutes = limits.session_limit_minutes || 3;
-                        const dailyLimit = limits.daily_session_limit ?? 3;
+                        const status = user.status || 'active';
+                        const actionsHtml = statusActionsFor(status)
+                            .map((action) => `
+                                <button class="button status-toggle" data-user-id="${user.id}" data-next-status="${action.next}">
+                                    ${action.label}
+                                </button>
+                            `)
+                            .join('');
 
                         return `
-                        <tr>
-                            <td>
-                                <div class="name">${escapeHtml(user.full_name)}</div>
-                                <div class="muted">${escapeHtml(user.email)}</div>
-                            </td>
-                            <td><span class="role role-${user.role}">${user.role}</span></td>
-                            <td class="muted">
+                        <article class="user-card">
+                            <div class="user-card-head">
+                                <div>
+                                    <div class="name">${escapeHtml(user.full_name)}</div>
+                                    <div class="muted">${escapeHtml(user.email)}</div>
+                                </div>
+                                <span class="role role-${user.role}">${user.role}</span>
+                            </div>
+                            <div class="muted">
                                 <div>${user.reading_attempts_count || 0} attempts</div>
                                 <div>${user.learners_count || 0} learners, ${user.tutors_count || 0} tutors</div>
-                            </td>
-                            <td>
-                                <div class="limit-controls">
-                                    <label>
-                                        Min/session
-                                        <input type="number" min="1" max="60" value="${sessionMinutes}" data-user-id="${user.id}" data-limit-field="session-minutes">
-                                    </label>
-                                    <label>
-                                        Sessions/jour
-                                        <input type="number" min="0" max="100" value="${dailyLimit}" data-user-id="${user.id}" data-limit-field="daily-limit">
-                                    </label>
-                                    <button class="button limit-save" data-user-id="${user.id}">Enregistrer</button>
-                                </div>
-                            </td>
-                            <td>
-                                <select data-user-id="${user.id}" data-current-role="${user.role}" class="role-select">
-                                    <option value="learner" ${user.role === 'learner' ? 'selected' : ''}>Learner</option>
-                                    <option value="tutor" ${user.role === 'tutor' ? 'selected' : ''}>Tutor</option>
-                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
-                                </select>
-                            </td>
-                        </tr>
+                            </div>
+                            <span class="status-badge status-${status}">${STATUS_LABELS[status] || status}</span>
+                            <div class="user-card-footer">${actionsHtml}</div>
+                        </article>
                     `;
                     })
                     .join('');
 
-                document.querySelectorAll('.role-select').forEach((select) => {
-                    select.addEventListener('change', async (event) => {
-                        const field = event.target;
-                        await updateUserRole(field.dataset.userId, field.value, field);
-                    });
-                });
-
-                document.querySelectorAll('.limit-save').forEach((button) => {
+                document.querySelectorAll('.status-toggle').forEach((button) => {
                     button.addEventListener('click', async (event) => {
-                        await updateConversationLimits(event.target.dataset.userId, event.target);
+                        const field = event.target;
+                        await updateUserStatus(field.dataset.userId, field.dataset.nextStatus);
                     });
                 });
             }
 
-            async function updateUserRole(userId, role, field) {
+            async function updateUserStatus(userId, nextStatus) {
                 setLoading(true);
                 showNotice('');
 
                 try {
-                    await apiRequest(`/admin/users/${userId}/role`, {
+                    await apiRequest(`/admin/users/${userId}/status`, {
                         method: 'PATCH',
                         token,
-                        body: JSON.stringify({ role }),
+                        body: JSON.stringify({ status: nextStatus }),
                     });
-                    await loadAdminArea();
+                    showNotice(nextStatus === 'suspended' ? 'Account suspended.' : 'Account reactivated.');
+                    await loadUsers();
                 } catch (error) {
-                    field.value = field.dataset.currentRole;
-                    showNotice(error.message || 'Impossible de changer le role.');
+                    showNotice(error.message || 'Could not update the status.');
                 } finally {
                     setLoading(false);
                 }
             }
 
-            async function updateConversationLimits(userId, button) {
-                const sessionInput = document.querySelector(`[data-user-id="${userId}"][data-limit-field="session-minutes"]`);
-                const dailyInput = document.querySelector(`[data-user-id="${userId}"][data-limit-field="daily-limit"]`);
-                const sessionMinutes = Number.parseInt(sessionInput.value, 10);
-                const dailyLimit = Number.parseInt(dailyInput.value, 10);
+            async function generateExercises() {
+                const type = document.getElementById('generate-type').value;
+                const level = document.getElementById('generate-level').value;
+                const language = document.getElementById('generate-language').value.trim();
+                const count = Number.parseInt(document.getElementById('generate-count').value, 10);
 
-                if (!Number.isFinite(sessionMinutes) || !Number.isFinite(dailyLimit)) {
-                    showNotice('Les limites doivent etre des nombres.');
+                if (language === '' || !Number.isFinite(count)) {
+                    showNotice('Language and count are required.');
                     return;
                 }
 
                 setLoading(true);
-                button.disabled = true;
                 showNotice('');
+                elements.generateResult.hidden = true;
 
                 try {
-                    await apiRequest(`/admin/users/${userId}/conversation-limits`, {
-                        method: 'PATCH',
+                    const response = await apiRequest('/admin/exercises/generate', {
+                        method: 'POST',
                         token,
-                        body: JSON.stringify({
-                            ai_conversation_session_limit_seconds: sessionMinutes * 60,
-                            ai_conversation_daily_session_limit: dailyLimit,
-                        }),
+                        body: JSON.stringify({ type, level, language, count }),
                     });
-                    showNotice('Limites conversation IA mises a jour.');
-                    await loadUsers();
+
+                    const exercises = response.data.exercises || [];
+                    elements.generateResult.hidden = exercises.length === 0;
+                    elements.generateResult.innerHTML = exercises
+                        .map((exercise) => `<div class="generate-result-item">${escapeHtml(exercise.title)}</div>`)
+                        .join('');
+                    showNotice(`${exercises.length} exercise(s) generated.`);
+                    await loadAdminArea();
                 } catch (error) {
-                    showNotice(error.message || 'Impossible de modifier les limites.');
+                    showNotice(error.message || 'Could not generate exercises.');
                 } finally {
-                    button.disabled = false;
                     setLoading(false);
                 }
             }
@@ -766,7 +823,7 @@
                     const firstError = payload.errors
                         ? Object.values(payload.errors).flat()[0]
                         : null;
-                    const error = new Error(firstError || payload.message || 'Erreur API');
+                    const error = new Error(firstError || payload.message || 'API error');
                     error.status = response.status;
                     throw error;
                 }

@@ -21,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string $role
+ * @property string $status
  * @property string $preferred_language
  * @property string $learning_level
  * @property int $dyslexia_font_size
@@ -36,6 +37,7 @@ use Laravel\Sanctum\HasApiTokens;
     'email',
     'password',
     'role',
+    'status',
     'preferred_language',
     'learning_level',
     'dyslexia_font_size',
@@ -52,6 +54,23 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_SUSPENDED = 'suspended';
+
+    public const STATUS_BLOCKED = 'blocked';
+
+    /**
+     * Mirrors the DB column default so a freshly-built in-memory instance
+     * (before any round-trip to the database) already reports as active,
+     * instead of leaving `status` null until the row is refetched.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => self::STATUS_ACTIVE,
+    ];
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -65,6 +84,38 @@ class User extends Authenticatable
             self::ROLE_TUTOR,
             self::ROLE_ADMIN,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE,
+            self::STATUS_SUSPENDED,
+            self::STATUS_BLOCKED,
+        ];
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === self::STATUS_SUSPENDED;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->status === self::STATUS_BLOCKED;
+    }
+
+    /**
+     * Suspended and blocked both deny access entirely; they only differ in
+     * intent (suspended = temporary/self-correctable, blocked = a harder,
+     * more deliberate admin decision).
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     /**

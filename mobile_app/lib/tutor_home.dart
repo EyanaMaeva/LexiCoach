@@ -180,7 +180,7 @@ class _TutorHomeState extends State<TutorHome> {
     final message = error.toString().replaceFirst('Exception: ', '').trim();
 
     if (message.isEmpty) {
-      return 'Une erreur est survenue.';
+      return 'Something went wrong.';
     }
 
     return message;
@@ -792,7 +792,7 @@ class _SummarySection extends StatelessWidget {
                 icon: Icons.groups_rounded,
                 title: 'Learners',
                 value: '$totalLearners',
-                caption: '$activeLearners actifs',
+                caption: '$activeLearners active',
                 color: AppColors.primary,
               ),
             ),
@@ -852,8 +852,7 @@ class _TutorProgressChartSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = _entriesFrom(progress);
-    // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
-    // l'apprenant) : exclu des agregats de score.
+    // Smart Abstract is not scored, so it is excluded from score aggregates.
     final scoredEntries = entries.where((entry) => entry.isScored);
     final totalAttempts = entries.fold<int>(
       0,
@@ -1306,8 +1305,8 @@ class _LinkLearnerCard extends StatelessWidget {
         children: [
           const _SectionTitle(
             icon: Icons.link_rounded,
-            title: 'Associer un learner',
-            subtitle: 'Entre le code genere dans son application.',
+            title: 'Link a learner',
+            subtitle: 'Enter the code generated in the learner app.',
           ),
           const SizedBox(height: 14),
           Row(
@@ -1446,7 +1445,7 @@ class _LatestAttemptsSection extends StatelessWidget {
       return const _EmptyCard(
         icon: Icons.history_rounded,
         title: 'No attempts yet',
-        message: 'Les dernieres activites apparaitront ici.',
+        message: 'The latest activities will appear here.',
       );
     }
 
@@ -1499,7 +1498,7 @@ class _LearnersSection extends StatelessWidget {
       return const _EmptyCard(
         icon: Icons.person_add_alt_1_rounded,
         title: 'No linked learners',
-        message: 'Demande au learner de generer son code puis ajoute-le ici.',
+        message: 'Ask the learner to generate a code, then add it here.',
       );
     }
 
@@ -1914,8 +1913,8 @@ class _AttemptHistoryTile extends StatelessWidget {
     final exercise = _asMap(attempt['exercise']);
     final title = _asString(exercise['title'], fallback: 'Exercise');
 
-    // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
-    // l'apprenant) : pas de score/status, on montre le resume genere.
+    // Smart Abstract is not scored, so there is no score/status here.
+    // The generated summary is shown instead.
     if (module == 'smart-abstract') {
       final summary = _asString(
         attempt['summary'],
@@ -2716,7 +2715,7 @@ class _ConfirmUnlinkSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Detach le learner ?',
+              'Detach learner?',
               style: TextStyle(
                 color: AppColors.textDark,
                 fontSize: 20,
@@ -2725,7 +2724,7 @@ class _ConfirmUnlinkSheet extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '$learnerName ne sera plus suivi par ce compte tutor.',
+              '$learnerName will no longer be followed by this tutor account.',
               style: const TextStyle(
                 color: AppColors.textLight,
                 fontSize: 14,

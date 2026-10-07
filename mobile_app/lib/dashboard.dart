@@ -188,9 +188,8 @@ class _DashboardState extends State<Dashboard> {
       final mode = value['learning_mode'] as Map<String, dynamic>? ?? {};
       final summary = value['summary'] as Map<String, dynamic>? ?? {};
 
-      // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
-      // l'apprenant) : pas de average_score, donc exclu du score global.
-      // Son activite (total_summaries) reste comptee dans le total.
+      // Smart Abstract is never scored because AI summarizes without grading
+      // the learner. Its activity still counts in the total.
       return _ProgressEntry(
         name: mode['name']?.toString() ?? entry.key,
         averageScore: _intFrom(summary['average_score']),

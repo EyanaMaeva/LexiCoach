@@ -152,8 +152,8 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     );
   }
 
-  /// Lit le document à voix haute (TTS local) — fonctionnalité payante
-  /// (100 FCFA/utilisation). Le résumé Smart Abstract reste gratuit.
+  /// Reads the document aloud with local TTS.
+  /// Smart Abstract summaries remain free.
   Future<void> _listenToDocument() async {
     if (_isSpeaking) {
       debugPrint('$_logTag _listenToDocument: stop requested by user');
@@ -173,20 +173,28 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
 
     setState(() => _isPreparingListen = true);
-    debugPrint('$_logTag _listenToDocument: starting paid-listen flow for exercise=${widget.exerciseId}');
+    debugPrint(
+      '$_logTag _listenToDocument: starting paid-listen flow for exercise=${widget.exerciseId}',
+    );
 
     try {
       final paid = await _ensurePayment();
-      debugPrint('$_logTag _listenToDocument: _ensurePayment resolved with paid=$paid');
+      debugPrint(
+        '$_logTag _listenToDocument: _ensurePayment resolved with paid=$paid',
+      );
 
       if (!paid) {
-        debugPrint('$_logTag _listenToDocument: aborting, payment was not confirmed');
+        debugPrint(
+          '$_logTag _listenToDocument: aborting, payment was not confirmed',
+        );
         if (mounted) setState(() => _isPreparingListen = false);
         return;
       }
 
       await _apiService.consumeListenCredit(widget.exerciseId);
-      debugPrint('$_logTag _listenToDocument: credit consumed, starting TTS playback');
+      debugPrint(
+        '$_logTag _listenToDocument: credit consumed, starting TTS playback',
+      );
       if (!mounted) return;
 
       setState(() {
@@ -197,7 +205,9 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
       await _tts.setLanguage(_exercise?['language'] ?? 'en-US');
       await _tts.speak(documentText);
     } catch (error) {
-      debugPrint('$_logTag _listenToDocument: error for exercise=${widget.exerciseId}: $error');
+      debugPrint(
+        '$_logTag _listenToDocument: error for exercise=${widget.exerciseId}: $error',
+      );
       if (!mounted) return;
 
       setState(() {
@@ -210,11 +220,12 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
   }
 
-  /// Crée une session de paiement Mercy Pay (100 FCFA), ouvre la page de
-  /// paiement dans une WebView intégrée, puis attend la confirmation du
-  /// webhook (jamais la redirection seule, qui ne prouve rien côté client).
+  /// Creates a Mercy Pay checkout session, opens it in an in-app WebView,
+  /// then waits for webhook confirmation.
   Future<bool> _ensurePayment() async {
-    debugPrint('$_logTag _ensurePayment: creating checkout session for exercise=${widget.exerciseId}');
+    debugPrint(
+      '$_logTag _ensurePayment: creating checkout session for exercise=${widget.exerciseId}',
+    );
 
     final Map<String, dynamic> checkout;
     try {
@@ -233,7 +244,9 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     final paymentId = payment['id'] as int;
 
     if (checkoutUrl.isEmpty) {
-      debugPrint('$_logTag _ensurePayment: empty checkout_url in response: $checkout');
+      debugPrint(
+        '$_logTag _ensurePayment: empty checkout_url in response: $checkout',
+      );
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open the payment page.')),
@@ -243,12 +256,13 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
 
     if (!mounted) return false;
 
-    debugPrint('$_logTag _ensurePayment: opening webview payment_id=$paymentId url=$checkoutUrl');
+    debugPrint(
+      '$_logTag _ensurePayment: opening webview payment_id=$paymentId url=$checkoutUrl',
+    );
 
-    // La WebView se ferme dès qu'elle détecte la redirection success/cancel,
-    // mais ça ne prouve rien côté client : on attend ensuite la confirmation
-    // du webhook via _waitForPaymentCompletion. Un retour explicite "cancel"
-    // raccourcit juste l'attente (au cas où le webhook arrive quand même).
+    // The WebView closes when it detects a success/cancel redirect, but that
+    // does not prove payment client-side. We still wait for webhook
+    // confirmation via _waitForPaymentCompletion.
     final webviewResult = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => PaymentWebViewPage(
@@ -259,7 +273,9 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
       ),
     );
 
-    debugPrint('$_logTag _ensurePayment: webview closed for payment_id=$paymentId result=$webviewResult');
+    debugPrint(
+      '$_logTag _ensurePayment: webview closed for payment_id=$paymentId result=$webviewResult',
+    );
 
     if (!mounted) return false;
     return _waitForPaymentCompletion(
@@ -307,9 +323,7 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
               const CircularProgressIndicator(color: AppColors.primary),
               const SizedBox(width: 20),
               const Expanded(
-                child: Text(
-                  'En attente de la confirmation du paiement (100 FCFA)...',
-                ),
+                child: Text('Waiting for payment confirmation (100 FCFA)...'),
               ),
             ],
           ),
@@ -570,8 +584,8 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
                       _isPreparingListen
                           ? 'Paying...'
                           : _isSpeaking
-                              ? 'Stop'
-                              : 'Listen (100 FCFA)',
+                          ? 'Stop'
+                          : 'Listen (100 FCFA)',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -868,9 +882,7 @@ class _ResultCard extends StatelessWidget {
               icon: Icons.check_circle_outline_rounded,
             ),
             const SizedBox(height: 8),
-            ...keyPoints.map(
-              (point) => _BulletText(text: point.toString()),
-            ),
+            ...keyPoints.map((point) => _BulletText(text: point.toString())),
           ],
         ],
       ),

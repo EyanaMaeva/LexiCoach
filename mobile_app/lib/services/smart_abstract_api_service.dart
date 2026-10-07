@@ -38,7 +38,7 @@ class SmartAbstractApiService {
     return data['data']['exercise'];
   }
 
-  /// Génère le résumé IA. Gratuit, aucun crédit de paiement requis.
+  /// Generates the AI summary. No payment credit is required.
   Future<Map<String, dynamic>> evaluateExercise({
     required int id,
     required String documentText,
@@ -53,9 +53,8 @@ class SmartAbstractApiService {
     return data['data'];
   }
 
-  /// Consomme un crédit de paiement pour autoriser la lecture à voix haute
-  /// (TTS côté app) du document de cet exercice. Aucun texte envoyé : seule
-  /// l'autorisation est vérifiée côté serveur.
+  /// Consumes one payment credit to allow local TTS playback for this exercise.
+  /// No document text is sent here; only the authorization is checked server-side.
   Future<Map<String, dynamic>> consumeListenCredit(int id) async {
     debugPrint('$_logTag consumeListenCredit: requesting for exercise=$id');
 
@@ -64,27 +63,35 @@ class SmartAbstractApiService {
       headers: await _authHeaders(),
     );
 
-    debugPrint('$_logTag consumeListenCredit: HTTP ${response.statusCode} for exercise=$id');
+    debugPrint(
+      '$_logTag consumeListenCredit: HTTP ${response.statusCode} for exercise=$id',
+    );
 
     if (response.statusCode == 402) {
-      debugPrint('$_logTag consumeListenCredit: 402 Payment Required - no available credit for exercise=$id');
+      debugPrint(
+        '$_logTag consumeListenCredit: 402 Payment Required - no available credit for exercise=$id',
+      );
     }
 
     final data = _decodeResponse(response);
     return data['data'];
   }
 
-  /// Crée une session de paiement Mercy Pay (100 FCFA) pour débloquer la
-  /// lecture à voix haute de cet exercice. Retourne `{payment: {...}, checkout_url}`.
+  /// Creates a Mercy Pay checkout session to unlock TTS playback for this exercise.
+  /// Returns `{payment: {...}, checkout_url}`.
   Future<Map<String, dynamic>> createCheckout(int id) async {
-    debugPrint('$_logTag createCheckout: requesting checkout session for exercise=$id');
+    debugPrint(
+      '$_logTag createCheckout: requesting checkout session for exercise=$id',
+    );
 
     final response = await _client.post(
       Uri.parse('$baseUrl/smart-abstract-exercises/$id/checkout'),
       headers: await _authHeaders(),
     );
 
-    debugPrint('$_logTag createCheckout: HTTP ${response.statusCode} for exercise=$id');
+    debugPrint(
+      '$_logTag createCheckout: HTTP ${response.statusCode} for exercise=$id',
+    );
 
     final data = _decodeResponse(response);
     final result = data['data'] as Map<String, dynamic>;
@@ -99,8 +106,7 @@ class SmartAbstractApiService {
     return result;
   }
 
-  /// Consulte le statut d'un paiement (pending/completed/failed) par son id
-  /// local, pour faire du polling après ouverture de la page de paiement.
+  /// Reads the local payment status for polling after the checkout page opens.
   Future<Map<String, dynamic>> getPaymentStatus(int paymentId) async {
     final response = await _client.get(
       Uri.parse('$baseUrl/smart-abstract-payments/$paymentId'),
@@ -137,10 +143,14 @@ class SmartAbstractApiService {
 
     final url = response.request?.url.toString() ?? '';
     final isPaymentRelated =
-        url.contains('checkout') || url.contains('smart-abstract-payments') || url.contains('/listen');
+        url.contains('checkout') ||
+        url.contains('smart-abstract-payments') ||
+        url.contains('/listen');
 
     if (isPaymentRelated) {
-      debugPrint('$_logTag API error: $url -> HTTP ${response.statusCode}: ${response.body}');
+      debugPrint(
+        '$_logTag API error: $url -> HTTP ${response.statusCode}: ${response.body}',
+      );
     }
 
     throw Exception(data['message'] ?? 'API Error ${response.statusCode}');

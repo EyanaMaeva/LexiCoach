@@ -33,7 +33,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   @override
   void initState() {
     super.initState();
-    debugPrint('$_logTag PaymentWebViewPage: loading checkout_url=${widget.checkoutUrl}');
+    debugPrint(
+      '$_logTag PaymentWebViewPage: loading checkout_url=${widget.checkoutUrl}',
+    );
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -55,12 +57,16 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           },
           onNavigationRequest: (request) {
             if (request.url.startsWith(widget.successUrlPrefix)) {
-              debugPrint('$_logTag PaymentWebViewPage: success redirect detected url=${request.url}');
+              debugPrint(
+                '$_logTag PaymentWebViewPage: success redirect detected url=${request.url}',
+              );
               _finish(true);
               return NavigationDecision.prevent;
             }
             if (request.url.startsWith(widget.cancelUrlPrefix)) {
-              debugPrint('$_logTag PaymentWebViewPage: cancel redirect detected url=${request.url}');
+              debugPrint(
+                '$_logTag PaymentWebViewPage: cancel redirect detected url=${request.url}',
+              );
               _finish(false);
               return NavigationDecision.prevent;
             }
@@ -74,7 +80,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   void _finish(bool success) {
     if (_hasFinished || !mounted) return;
     _hasFinished = true;
-    debugPrint('$_logTag PaymentWebViewPage: closing webview, success=$success');
+    debugPrint(
+      '$_logTag PaymentWebViewPage: closing webview, success=$success',
+    );
     Navigator.of(context).pop(success);
   }
 
@@ -91,8 +99,11 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           backgroundColor: Colors.white,
           elevation: 0,
           title: const Text(
-            'Paiement sécurisé',
-            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+            'Secure payment',
+            style: TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           leading: IconButton(
             icon: const Icon(Icons.close_rounded, color: AppColors.textDark),
@@ -103,7 +114,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           children: [
             WebViewWidget(controller: _controller),
             if (_isLoading)
-              const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
           ],
         ),
       ),

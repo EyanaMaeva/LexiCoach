@@ -83,6 +83,14 @@ class AuthController extends Controller
             ])->status(401);
         }
 
+        if (! $user->isActive()) {
+            $message = $user->isBlocked() ? 'This account has been blocked.' : 'This account has been suspended.';
+
+            throw ValidationException::withMessages([
+                'email' => [$message],
+            ])->status(403);
+        }
+
         $token = $user->createToken($validated['device_name'] ?? 'api-client')->plainTextToken;
 
         return response()->json([

@@ -70,19 +70,23 @@ class _ProgressChartPageState extends State<ProgressChartPage> {
 
           final progress = snapshot.data ?? {};
           final entries = _progressEntries(progress);
+          // Smart Abstract n'est jamais note (l'IA resume, elle ne juge
+          // pas l'apprenant) : exclu des agregats de score, mais son
+          // activite reste comptee dans le total de tentatives.
+          final scoredEntries = entries.where((entry) => entry.isScored);
           final totalAttempts = entries.fold<int>(
             0,
             (sum, entry) => sum + entry.totalAttempts,
           );
-          final averageScore = entries.isEmpty
+          final averageScore = scoredEntries.isEmpty
               ? 0
-              : (entries.fold<int>(
+              : (scoredEntries.fold<int>(
                           0,
                           (sum, entry) => sum + entry.averageScore,
                         ) /
-                        entries.length)
+                        scoredEntries.length)
                     .round();
-          final bestScore = entries.fold<int>(
+          final bestScore = scoredEntries.fold<int>(
             0,
             (best, entry) => entry.bestScore > best ? entry.bestScore : best,
           );
@@ -139,7 +143,7 @@ class _ProgressChartPageState extends State<ProgressChartPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              _ProgressBarChart(entries: entries),
+              _ProgressBarChart(entries: scoredEntries.toList()),
               const SizedBox(height: 20),
               ...entries.map((entry) => _ModeProgressTile(entry: entry)),
             ],
@@ -159,9 +163,14 @@ class _ProgressChartPageState extends State<ProgressChartPage> {
         slug: mapEntry.key,
         name: mode['name']?.toString() ?? _labelFromSlug(mapEntry.key),
         averageScore: _intFrom(summary['average_score']),
+        isScored: summary.containsKey('average_score'),
         bestScore: _intFrom(summary['best_score']),
-        totalAttempts: _intFrom(summary['total_attempts']),
-        completedExercises: _intFrom(summary['completed_exercises']),
+        totalAttempts: _intFrom(
+          summary['total_attempts'] ?? summary['total_summaries'],
+        ),
+        completedExercises: _intFrom(
+          summary['completed_exercises'] ?? summary['documents_completed'],
+        ),
         latestAttempt: summary['latest_attempt'] as Map<String, dynamic>?,
       );
     }).toList();
@@ -190,6 +199,7 @@ class _ProgressEntry {
     required this.slug,
     required this.name,
     required this.averageScore,
+    required this.isScored,
     required this.bestScore,
     required this.totalAttempts,
     required this.completedExercises,
@@ -199,6 +209,7 @@ class _ProgressEntry {
   final String slug;
   final String name;
   final int averageScore;
+  final bool isScored;
   final int bestScore;
   final int totalAttempts;
   final int completedExercises;
@@ -218,6 +229,7 @@ class _ProgressBarChart extends StatelessWidget {
               slug: 'empty',
               name: 'No data',
               averageScore: 0,
+              isScored: true,
               bestScore: 0,
               totalAttempts: 0,
               completedExercises: 0,
@@ -384,24 +396,43 @@ class _ModeProgressTile extends StatelessWidget {
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${entry.averageScore}%',
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                '${entry.totalAttempts} tries',
-                style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+            children: entry.isScored
+                ? [
+                    Text(
+                      '${entry.averageScore}%',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      '${entry.totalAttempts} tries',
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ]
+                : [
+                    Text(
+                      '${entry.totalAttempts}',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const Text(
+                      'summaries',
+                      style: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
           ),
         ],
       ),

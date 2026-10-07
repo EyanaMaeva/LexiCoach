@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import 'app_colors.dart';
@@ -25,11 +26,14 @@ class SmartAbstractPractice extends StatefulWidget {
 class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
   final _apiService = SmartAbstractApiService();
   final _documentController = TextEditingController();
+  final _tts = FlutterTts();
 
   Map<String, dynamic>? _exercise;
   Map<String, dynamic>? _result;
   bool _isLoading = true;
   bool _isEvaluating = false;
+  bool _isPreparingListen = false;
+  bool _isSpeaking = false;
   String? _errorMessage;
   String? _selectedFileName;
 
@@ -37,11 +41,15 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
   void initState() {
     super.initState();
     _loadExercise();
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
   }
 
   @override
   void dispose() {
     _documentController.dispose();
+    _tts.stop();
     super.dispose();
   }
 
@@ -78,31 +86,20 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
 
     setState(() => _isEvaluating = true);
-    debugPrint('$_logTag _evaluate: starting paid-evaluation flow for exercise=${widget.exerciseId}');
 
     try {
-      final paid = await _ensurePayment();
-      debugPrint('$_logTag _evaluate: _ensurePayment resolved with paid=$paid');
-
-      if (!paid) {
-        debugPrint('$_logTag _evaluate: aborting, payment was not confirmed');
-        if (mounted) setState(() => _isEvaluating = false);
-        return;
-      }
-
       final data = await _apiService.evaluateExercise(
         id: widget.exerciseId,
         documentText: documentText,
       );
-      debugPrint('$_logTag _evaluate: evaluation succeeded for exercise=${widget.exerciseId}');
       if (!mounted) return;
 
       setState(() {
         _result = data['result'];
         _isEvaluating = false;
       });
+      _showResultSheet();
     } catch (error) {
-      debugPrint('$_logTag _evaluate: error for exercise=${widget.exerciseId}: $error');
       if (!mounted) return;
 
       setState(() => _isEvaluating = false);
@@ -112,9 +109,110 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
     }
   }
 
+  void _showResultSheet() {
+    if (_result == null || !mounted) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.textFieldBorder,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                _ResultCard(result: _result!),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Lit le document à voix haute (TTS local) — fonctionnalité payante
+  /// (100 FCFA/utilisation). Le résumé Smart Abstract reste gratuit.
+  Future<void> _listenToDocument() async {
+    if (_isSpeaking) {
+      debugPrint('$_logTag _listenToDocument: stop requested by user');
+      await _tts.stop();
+      if (mounted) setState(() => _isSpeaking = false);
+      return;
+    }
+
+    if (_isPreparingListen) return;
+
+    final documentText = _documentController.text.trim();
+    if (documentText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Paste the document first.')),
+      );
+      return;
+    }
+
+    setState(() => _isPreparingListen = true);
+    debugPrint('$_logTag _listenToDocument: starting paid-listen flow for exercise=${widget.exerciseId}');
+
+    try {
+      final paid = await _ensurePayment();
+      debugPrint('$_logTag _listenToDocument: _ensurePayment resolved with paid=$paid');
+
+      if (!paid) {
+        debugPrint('$_logTag _listenToDocument: aborting, payment was not confirmed');
+        if (mounted) setState(() => _isPreparingListen = false);
+        return;
+      }
+
+      await _apiService.consumeListenCredit(widget.exerciseId);
+      debugPrint('$_logTag _listenToDocument: credit consumed, starting TTS playback');
+      if (!mounted) return;
+
+      setState(() {
+        _isPreparingListen = false;
+        _isSpeaking = true;
+      });
+
+      await _tts.setLanguage(_exercise?['language'] ?? 'en-US');
+      await _tts.speak(documentText);
+    } catch (error) {
+      debugPrint('$_logTag _listenToDocument: error for exercise=${widget.exerciseId}: $error');
+      if (!mounted) return;
+
+      setState(() {
+        _isPreparingListen = false;
+        _isSpeaking = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
   /// Crée une session de paiement Mercy Pay (100 FCFA), ouvre la page de
-  /// paiement dans le navigateur, puis attend la confirmation du webhook
-  /// (jamais la redirection seule, qui ne prouve rien côté client).
+  /// paiement dans une WebView intégrée, puis attend la confirmation du
+  /// webhook (jamais la redirection seule, qui ne prouve rien côté client).
   Future<bool> _ensurePayment() async {
     debugPrint('$_logTag _ensurePayment: creating checkout session for exercise=${widget.exerciseId}');
 
@@ -406,44 +504,94 @@ class _SmartAbstractPracticeState extends State<SmartAbstractPractice> {
             onChanged: () => setState(() {}),
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: _isEvaluating ? null : _evaluate,
-              icon: _isEvaluating
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _isEvaluating ? null : _evaluate,
+                    icon: _isEvaluating
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: Text(
+                      _isEvaluating ? 'Summarizing...' : 'Generate Summary',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 0.65,
                       ),
-                    )
-                  : const Icon(Icons.auto_awesome_rounded),
-              label: Text(
-                _isEvaluating ? 'Processing...' : 'Generate Summary (100 FCFA)',
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                disabledBackgroundColor: AppColors.primary.withValues(
-                  alpha: 0.65,
-                ),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: _isPreparingListen ? null : _listenToDocument,
+                    icon: _isPreparingListen
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              color: AppColors.logoBlue,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            _isSpeaking
+                                ? Icons.stop_circle_rounded
+                                : Icons.volume_up_rounded,
+                            size: 18,
+                          ),
+                    label: Text(
+                      _isPreparingListen
+                          ? 'Paying...'
+                          : _isSpeaking
+                              ? 'Stop'
+                              : 'Listen (100 FCFA)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.logoBlue,
+                      side: const BorderSide(color: AppColors.logoBlue),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          if (_result != null) ...[
-            const SizedBox(height: 24),
-            _ResultCard(result: _result!),
-          ],
         ],
       ),
     );
@@ -652,9 +800,7 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final feedback = result['feedback'] as Map<String, dynamic>?;
-    final missingIdeas = result['missing_ideas'] as List<dynamic>? ?? [];
-    final strengths = result['strengths'] as List<dynamic>? ?? [];
-    final score = result['score'] ?? 0;
+    final keyPoints = result['strengths'] as List<dynamic>? ?? [];
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -676,50 +822,34 @@ class _ResultCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                height: 58,
-                width: 58,
+                height: 48,
+                width: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: _scoreColor(score).withValues(alpha: 0.10),
+                  color: AppColors.logoBlue.withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
-                child: Text(
-                  '$score%',
-                  style: TextStyle(
-                    color: _scoreColor(score),
-                    fontWeight: FontWeight.w900,
-                  ),
+                child: const Icon(
+                  Icons.summarize_rounded,
+                  color: AppColors.logoBlue,
                 ),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      feedback?['title'] ?? 'Feedback',
-                      style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      feedback?['message'] ?? '',
-                      style: const TextStyle(
-                        color: AppColors.textLight,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  feedback?['title'] ?? 'Summary ready',
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 22),
           const _SectionTitle(
-            title: 'Improved summary',
+            title: 'Summary',
             icon: Icons.auto_fix_high_rounded,
           ),
           const SizedBox(height: 8),
@@ -731,37 +861,20 @@ class _ResultCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (strengths.isNotEmpty) ...[
+          if (keyPoints.isNotEmpty) ...[
             const SizedBox(height: 22),
             const _SectionTitle(
-              title: 'Strengths',
+              title: 'Key points',
               icon: Icons.check_circle_outline_rounded,
             ),
             const SizedBox(height: 8),
-            ...strengths.map(
-              (strength) => _BulletText(text: strength.toString()),
+            ...keyPoints.map(
+              (point) => _BulletText(text: point.toString()),
             ),
-          ],
-          if (missingIdeas.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            const _SectionTitle(
-              title: 'Missing ideas',
-              icon: Icons.lightbulb_outline_rounded,
-            ),
-            const SizedBox(height: 8),
-            ...missingIdeas.map((idea) => _BulletText(text: idea.toString())),
           ],
         ],
       ),
     );
-  }
-
-  Color _scoreColor(dynamic score) {
-    final value = score is num ? score : num.tryParse(score.toString()) ?? 0;
-
-    if (value >= 80) return AppColors.logoTeal;
-    if (value >= 50) return AppColors.logoOrange;
-    return Colors.redAccent;
   }
 }
 

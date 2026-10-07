@@ -825,6 +825,7 @@ class _TutorProgressEntry {
     required this.slug,
     required this.name,
     required this.averageScore,
+    required this.isScored,
     required this.bestScore,
     required this.totalAttempts,
     required this.latestAttempt,
@@ -833,6 +834,7 @@ class _TutorProgressEntry {
   final String slug;
   final String name;
   final int averageScore;
+  final bool isScored;
   final int bestScore;
   final int totalAttempts;
   final Map<String, dynamic>? latestAttempt;
@@ -850,16 +852,22 @@ class _TutorProgressChartSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = _entriesFrom(progress);
+    // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
+    // l'apprenant) : exclu des agregats de score.
+    final scoredEntries = entries.where((entry) => entry.isScored);
     final totalAttempts = entries.fold<int>(
       0,
       (sum, entry) => sum + entry.totalAttempts,
     );
-    final averageScore = entries.isEmpty
+    final averageScore = scoredEntries.isEmpty
         ? 0
-        : (entries.fold<int>(0, (sum, entry) => sum + entry.averageScore) /
-                  entries.length)
+        : (scoredEntries.fold<int>(
+                    0,
+                    (sum, entry) => sum + entry.averageScore,
+                  ) /
+                  scoredEntries.length)
               .round();
-    final bestScore = entries.fold<int>(
+    final bestScore = scoredEntries.fold<int>(
       0,
       (best, entry) => entry.bestScore > best ? entry.bestScore : best,
     );
@@ -894,7 +902,7 @@ class _TutorProgressChartSection extends StatelessWidget {
           bestScore: bestScore,
         ),
         const SizedBox(height: 20),
-        _TutorProgressBarChart(entries: entries),
+        _TutorProgressBarChart(entries: scoredEntries.toList()),
         const SizedBox(height: 20),
         ...entries.map((entry) => _TutorModeProgressTile(entry: entry)),
       ],
@@ -912,8 +920,11 @@ class _TutorProgressChartSection extends StatelessWidget {
         slug: entry.key,
         name: _asString(mode['name'], fallback: _labelFromSlug(entry.key)),
         averageScore: _asInt(summary['average_score']) ?? 0,
+        isScored: summary.containsKey('average_score'),
         bestScore: _asInt(summary['best_score']) ?? 0,
-        totalAttempts: _asInt(summary['total_attempts']) ?? 0,
+        totalAttempts:
+            _asInt(summary['total_attempts'] ?? summary['total_summaries']) ??
+            0,
         latestAttempt: latestAttempts.isEmpty
             ? null
             : _asMap(_asMap(latestAttempts.first)['attempt']),
@@ -992,6 +1003,7 @@ class _TutorProgressBarChart extends StatelessWidget {
               slug: 'empty',
               name: 'No data',
               averageScore: 0,
+              isScored: true,
               bestScore: 0,
               totalAttempts: 0,
               latestAttempt: null,
@@ -1170,24 +1182,43 @@ class _TutorModeProgressTile extends StatelessWidget {
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${entry.averageScore}%',
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                '${entry.totalAttempts} tries',
-                style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+            children: entry.isScored
+                ? [
+                    Text(
+                      '${entry.averageScore}%',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      '${entry.totalAttempts} tries',
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ]
+                : [
+                    Text(
+                      '${entry.totalAttempts}',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const Text(
+                      'summaries',
+                      style: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
           ),
         ],
       ),
@@ -1882,6 +1913,73 @@ class _AttemptHistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final exercise = _asMap(attempt['exercise']);
     final title = _asString(exercise['title'], fallback: 'Exercise');
+
+    // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
+    // l'apprenant) : pas de score/status, on montre le resume genere.
+    if (module == 'smart-abstract') {
+      final summary = _asString(
+        attempt['summary'],
+        fallback: 'Summary generated.',
+      );
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.textFieldBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: AppColors.logoTeal.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.summarize_rounded,
+                color: AppColors.logoTeal,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 12,
+                      height: 1.3,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final score = _asInt(attempt['score']) ?? 0;
     final status = _asString(attempt['status'], fallback: module);
     final feedback = _asString(attempt['feedback'], fallback: 'No feedback');

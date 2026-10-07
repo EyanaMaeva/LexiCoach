@@ -188,19 +188,26 @@ class _DashboardState extends State<Dashboard> {
       final mode = value['learning_mode'] as Map<String, dynamic>? ?? {};
       final summary = value['summary'] as Map<String, dynamic>? ?? {};
 
+      // Smart Abstract n'est jamais note (l'IA resume, elle ne juge pas
+      // l'apprenant) : pas de average_score, donc exclu du score global.
+      // Son activite (total_summaries) reste comptee dans le total.
       return _ProgressEntry(
         name: mode['name']?.toString() ?? entry.key,
         averageScore: _intFrom(summary['average_score']),
-        totalAttempts: _intFrom(summary['total_attempts']),
+        isScored: summary.containsKey('average_score'),
+        totalAttempts: _intFrom(
+          summary['total_attempts'] ?? summary['total_summaries'],
+        ),
       );
     }).toList();
   }
 
   int _averageScore(List<_ProgressEntry> entries) {
-    if (entries.isEmpty) return 0;
+    final scored = entries.where((entry) => entry.isScored).toList();
+    if (scored.isEmpty) return 0;
 
-    return (entries.fold<int>(0, (sum, entry) => sum + entry.averageScore) /
-            entries.length)
+    return (scored.fold<int>(0, (sum, entry) => sum + entry.averageScore) /
+            scored.length)
         .round();
   }
 
@@ -261,11 +268,13 @@ class _ProgressEntry {
   const _ProgressEntry({
     required this.name,
     required this.averageScore,
+    required this.isScored,
     required this.totalAttempts,
   });
 
   final String name;
   final int averageScore;
+  final bool isScored;
   final int totalAttempts;
 }
 
